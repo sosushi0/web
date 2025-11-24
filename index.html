@@ -18,7 +18,6 @@
             color: #f3f4f6;
         }
         /* Agregamos comportamiento de scroll suave global */
-         /* Agregamos comportamiento de scroll suave global */
         html {
             scroll-behavior: smooth;
         }
@@ -98,14 +97,28 @@
             object-position: center;
             transition: transform 0.5s ease;
         }
+        
+        /* Animación para el banner de envío gratis */
+        @keyframes pulse-green {
+            0%, 100% { background-color: #16a34a; }
+            50% { background-color: #15803d; }
+        }
+        .free-shipping-banner {
+            animation: pulse-green 2s infinite;
+        }
     </style>
 </head>
 <body class="text-gray-100">
 
     <!-- Header / Navbar -->
     <nav class="bg-black shadow-lg fixed w-full z-50 top-0 border-b border-gray-800">
+        <!-- Banner de Envío Gratis -->
+        <div class="free-shipping-banner text-white text-center py-1 text-xs font-bold tracking-wider uppercase">
+            <i class="fa-solid fa-motorcycle mr-1"></i> ¡Envío a Domicilio GRATIS! <i class="fa-solid fa-motorcycle ml-1"></i>
+        </div>
+        
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
+            <div class="flex justify-between items-center h-14"> <!-- Ajuste altura por el banner -->
                 <div class="flex items-center gap-2">
                     <div class="bg-red-600 w-8 h-8 rounded-full flex items-center justify-center">
                         <i class="fa-solid fa-fish-fins text-white text-sm"></i>
@@ -126,11 +139,14 @@
     </nav>
 
     <!-- Hero Section -->
-    <div class="relative bg-gray-900 h-64 mt-16 flex items-center justify-center overflow-hidden">
+    <div class="relative bg-gray-900 h-64 mt-20 flex items-center justify-center overflow-hidden"> <!-- mt-20 para compensar banner -->
         <img src="https://images.unsplash.com/photo-1553621042-f6e147245754?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Sushi Banner" class="absolute w-full h-full object-cover opacity-40">
         <div class="relative z-10 text-center px-4 max-w-2xl">
             <h1 class="text-5xl font-bold text-white mb-2 drop-shadow-xl">SO SUSHI</h1>
-            <p class="text-gray-300 text-lg font-light mb-4">¡Grandes descuentos en todo el menú!</p>
+            <p class="text-gray-300 text-lg font-light mb-2">¡Grandes descuentos en todo el menú!</p>
+            <div class="inline-block bg-green-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow mb-4">
+                <i class="fa-solid fa-check"></i> Envío Gratis
+            </div>
             <div class="flex justify-center gap-3">
                 <a href="#menu-start" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full text-sm font-bold transition shadow-lg">
                     Ver Menú
@@ -156,7 +172,7 @@
         <!-- Categoría: Sushis Especiales -->
         <div class="mb-12">
             <div class="flex items-center gap-3 mb-6">
-                <h2 class="text-2xl font-bold text-white text-red-500">Sushis Especiales ($90)</h2>
+                <h2 class="text-2xl font-bold text-white text-red-500">Sushis Especiales ($80)</h2>
                 <div class="h-1 flex-1 bg-gray-800 rounded"></div>
             </div>
             <div id="grid-especiales" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -167,7 +183,7 @@
         <!-- Categoría: Sushis Clásicos -->
         <div class="mb-12">
             <div class="flex items-center gap-3 mb-6">
-                <h2 class="text-2xl font-bold text-white">Sushis Clásicos ($75)</h2>
+                <h2 class="text-2xl font-bold text-white">Sushis Clásicos ($70)</h2>
                 <div class="h-1 flex-1 bg-gray-800 rounded"></div>
             </div>
             <div id="grid-clasicos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -210,8 +226,12 @@
             </div>
 
             <!-- Checkout Form Section -->
-            <!-- CORRECCIÓN: Agregué 'overflow-y-auto' y 'max-h-[80vh]' para que si el contenido crece, aparezca scroll y no esconda el botón -->
             <div class="p-5 bg-gray-800 border-t border-gray-700 shadow-[0_-5px_15px_rgba(0,0,0,0.3)] overflow-y-auto max-h-[80vh]">
+                <!-- Aviso Envío Gratis en Checkout -->
+                <div class="mb-3 bg-green-900/30 border border-green-700 rounded p-2 text-center">
+                    <p class="text-green-400 text-xs font-bold"><i class="fa-solid fa-check-circle"></i> Envío GRATIS aplicado</p>
+                </div>
+
                 <div class="flex justify-between items-center mb-4 text-xl font-bold text-white">
                     <span>Total:</span>
                     <span id="cart-total" class="text-red-500">$0.00</span>
@@ -295,9 +315,9 @@
         
         // Listas de Proteínas
         const proteinasEstandar = ["Camarón", "Pollo", "Surimi"];
-        const proteinasLimitadas = ["Pollo", "Camarón"]; // Para Yakimeshi Proteína
+        const proteinasLimitadas = ["Pollo", "Camarón"]; 
         
-        // Imagen por defecto para cuando no hay una específica
+        // Imagen por defecto
         const defaultImage = "defaul.jpg";
 
         const menuPromos = [
@@ -305,26 +325,31 @@
             { id: "promo2", name: "Promo Empa & Bocados", description: "2 Rollos Empanizados + 1 Orden de Bocados de Arroz.", originalPrice: 255, price: 170, image: "empanizado.jpeg", proteins: [] }
         ];
 
+        // PRECIO ACTUALIZADO: $80
         const menuEspeciales = [
-            { id: "esp1", name: "Mata Hambre", description: "Rollo empanizado con queso gratinado y topping de tocino crocante.", originalPrice: 110, price: 90, image: "mata.jpeg", proteins: proteinasEstandar },
-            { id: "esp2", name: "Nachito Roll", description: "Rollo empanizado con queso amarillo y rodajas de chile jalapeño.", originalPrice: 110, price: 90, image: "nachito.jpeg", proteins: proteinasEstandar },
-            { id: "esp3", name: "Chipotle Roll", description: "Rollo empanizado cubierto de aderezo de chipotle.", originalPrice: 110, price: 90, image: defaultImage, proteins: proteinasEstandar },
-            { id: "esp4", name: "Empanizado Coronado", description: "Rollo empanizado con topping de ensalada de surimi.", originalPrice: 110, price: 90, image: defaultImage, proteins: proteinasEstandar },
-            { id: "esp5", name: "Queso Roll", description: "Rollo empanizado con delicioso queso gratinado.", originalPrice: 110, price: 90, image: "queso.jpeg", proteins: proteinasEstandar },
-            { id: "esp6", name: "Macho Roll", description: "Rollo forrado de plátano frito con toque de salsa de anguila.", originalPrice: 110, price: 90, image: "machito.jpeg", proteins: proteinasEstandar }
+            { id: "esp1", name: "Mata Hambre", description: "Rollo empanizado con queso gratinado y topping de tocino crocante.", originalPrice: 110, price: 80, image: "mata.jpeg", proteins: proteinasEstandar },
+            { id: "esp2", name: "Nachito Roll", description: "Rollo empanizado con queso amarillo y rodajas de chile jalapeño.", originalPrice: 110, price: 80, image: "nachito.jpeg", proteins: proteinasEstandar },
+            { id: "esp3", name: "Chipotle Roll", description: "Rollo empanizado cubierto de aderezo de chipotle.", originalPrice: 110, price: 80, image: defaultImage, proteins: proteinasEstandar },
+            { id: "esp4", name: "Empanizado Coronado", description: "Rollo empanizado con topping de ensalada de surimi.", originalPrice: 110, price: 80, image: defaultImage, proteins: proteinasEstandar },
+            { id: "esp5", name: "Queso Roll", description: "Rollo empanizado con delicioso queso gratinado.", originalPrice: 110, price: 80, image: "queso.jpeg", proteins: proteinasEstandar },
+            { id: "esp6", name: "Macho Roll", description: "Rollo forrado de plátano frito con toque de salsa de anguila.", originalPrice: 110, price: 80, image: "machito.jpeg", proteins: proteinasEstandar }
         ];
 
+        // PRECIO ACTUALIZADO: $70
         const menuClasicos = [
-            { id: "cls1", name: "Ajonjolí", description: "Rollo cubierto de ajonjolí por fuera. Relleno clásico.", originalPrice: 90, price: 75, image: defaultImage, proteins: proteinasEstandar },
-            { id: "cls2", name: "Philadelphia Empanizado", description: "Rollo empanizado con philadelphia por dentro y fuera.", originalPrice: 90, price: 75, image: defaultImage, proteins: proteinasEstandar },
-            { id: "cls3", name: "Aguacatito", description: "Rollo forrado de aguacate fresco. Relleno a elegir.", originalPrice: 90, price: 75, image: defaultImage, proteins: proteinasEstandar },
-            { id: "cls4", name: "Empanizado Tradicional", description: "Rollo empanizado por fuera, crujiente y delicioso.", originalPrice: 90, price: 75, image: "empanizado.jpeg", proteins: proteinasEstandar },
-            { id: "cls5", name: "Philadelphia (Natural)", description: "Rollo cubierto de queso crema por fuera. Relleno clásico.", originalPrice: 90, price: 75, image: defaultImage, proteins: proteinasEstandar }
+            { id: "cls1", name: "Ajonjolí", description: "Rollo cubierto de ajonjolí por fuera. Relleno clásico.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
+            { id: "cls2", name: "Philadelphia Empanizado", description: "Rollo empanizado con philadelphia por dentro y fuera.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
+            { id: "cls3", name: "Aguacatito", description: "Rollo forrado de aguacate fresco. Relleno a elegir.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
+            { id: "cls4", name: "Empanizado Tradicional", description: "Rollo empanizado por fuera, crujiente y delicioso.", originalPrice: 90, price: 70, image: "empanizado.jpeg", proteins: proteinasEstandar },
+            { id: "cls5", name: "Philadelphia (Natural)", description: "Rollo cubierto de queso crema por fuera. Relleno clásico.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
+            { id: "cls6", name: "California", description: "Rollo con alga por fuera.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar }
         ];
 
+        // AGREGADO ARROZ CULICHI
         const menuExtras = [
-            { id: "rice1", name: "Yakimeshi Sencillo", description: "Arroz frito con vegetales y huevo (Sin carne).", originalPrice: 70, price: 50, image: "a.jpeg", proteins: ["Vegetales"] },
-            { id: "rice2", name: "Yakimeshi Proteína", description: "Arroz frito especial con tu proteína favorita (Pollo o Camarón).", originalPrice: 85, price: 65, image: "culichi.jpeg", proteins: proteinasLimitadas },
+            { id: "rice1", name: "Yakimeshi Sencillo", description: "Arroz frito con vegetales (Sin proteina).", originalPrice: 70, price: 50, image: "sen.jpeg", proteins: ["Vegetales"] },
+            { id: "rice2", name: "Yakimeshi Proteína", description: "Arroz frito especial con tu proteína favorita (Pollo o Camarón).", originalPrice: 85, price: 60, image: "a.jpeg", proteins: proteinasLimitadas },
+            { id: "rice3", name: "Arroz Culichi", description: "Delicioso arroz frito con proteina,aguacate, y queso philadelphia.", originalPrice: 100, price: 70, image: "culichi.jpeg", proteins: proteinasLimitadas },
             { id: "app1", name: "Bocados de Arroz", description: "Brochetas empanizadas de queso manchego.", originalPrice: 65, price: 55, image: "bolitas.png", proteins: ["Queso"] }
         ];
 
@@ -685,6 +710,9 @@
 
             message += `────────────────────\n`;
             message += `💰 *TOTAL A PAGAR: $${totalPrice.toFixed(2)}*\n`;
+            if (totalPrice > 0) { // Solo mostramos "Envío Gratis" si el total es > 0, aunque técnicamente es siempre
+                 message += `🚚 *Envío:* GRATIS\n`;
+            }
             message += `────────────────────\n\n`;
             
             message += `💳 *INFORMACIÓN DE PAGO*\n`;
@@ -720,8 +748,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
