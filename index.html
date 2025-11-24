@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>So Sushi - Menú Digital</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a1a1a;
+            color: #f3f4f6;
+        }
+        /* Agregamos comportamiento de scroll suave global */
+        html {
+            scroll-behavior: smooth;
+        }
+        .sushi-card {
+            background-color: #262626;
+            transition: all 0.3s ease;
+        }
+        .sushi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            border-color: #ef4444;
+        }
+        .modal {
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none;
+            opacity: 0;
+        }
+        .modal.active {
+            pointer-events: all;
+            opacity: 1;
+        }
+        .modal-content {
+            transform: translateY(20px);
+            transition: transform 0.3s ease-in-out;
+        }
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+        .cart-items::-webkit-scrollbar {
+            width: 6px;
+        }
+        .cart-items::-webkit-scrollbar-thumb {
+            background-color: #4b5563;
+            border-radius: 4px;
+        }
+        /* Clase para bloquear el scroll del body cuando el modal está abierto */
+        body.modal-open {
+            overflow: hidden;
+        }
+        /* Etiquetas */
+        .badge-offer {
+            background: linear-gradient(45deg, #f59e0b, #d97706);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .strike-price {
+            text-decoration: line-through;
+            color: #9ca3af;
+            font-size: 0.9rem;
+            margin-right: 5px;
+        }
+
+        /* Wrapper para mostrar la imagen completa sin recortar */
+        .sushi-image-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            background-color: #111827; /* color de fondo para evitar franjas blancas */
+            overflow: hidden;
+        }
+        .sushi-image-wrapper img {
+            /* Ajuste para que la imagen llene la altura disponible y sea más grande */
+            height: 100%;
+            width: auto;
+            max-width: none;
+            object-fit: contain; /* muestra la imagen completa */
+            object-position: center;
+            transition: transform 0.5s ease;
+        }
+    </style>
+</head>
+<body class="text-gray-100">
+
+    <!-- Header / Navbar -->
+    <nav class="bg-black shadow-lg fixed w-full z-50 top-0 border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2">
+                    <div class="bg-red-600 w-8 h-8 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-fish-fins text-white text-sm"></i>
+                    </div>
+                    <span class="font-bold text-xl tracking-wide text-white">SO <span class="text-red-500">SUSHI</span></span>
+                </div>
+                <div class="relative cursor-pointer hover:scale-105 transition" onclick="toggleCart()">
+                    <div class="flex items-center gap-2">
+                        <span class="hidden md:block text-sm font-semibold text-gray-300">Ver Pedido</span>
+                        <div class="relative">
+                            <i class="fa-solid fa-cart-shopping text-2xl text-white hover:text-red-500 transition"></i>
+                            <span id="cart-count" class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-black">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="relative bg-gray-900 h-64 mt-16 flex items-center justify-center overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1553621042-f6e147245754?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Sushi Banner" class="absolute w-full h-full object-cover opacity-40">
+        <div class="relative z-10 text-center px-4 max-w-2xl">
+            <h1 class="text-5xl font-bold text-white mb-2 drop-shadow-xl">SO SUSHI</h1>
+            <p class="text-gray-300 text-lg font-light mb-4">¡Grandes descuentos en todo el menú!</p>
+            <div class="flex justify-center gap-3">
+                <a href="#menu-start" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full text-sm font-bold transition shadow-lg">
+                    Ver Menú
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Section -->
+    <div id="menu-start" class="max-w-7xl mx-auto px-4 py-8 pb-24">
+        
+        <!-- Categoría: Promociones -->
+        <div class="mb-12">
+            <div class="flex items-center gap-3 mb-6">
+                <h2 class="text-2xl font-bold text-white text-yellow-500"><i class="fa-solid fa-star mr-2"></i>Promociones</h2>
+                <div class="h-1 flex-1 bg-gray-800 rounded"></div>
+            </div>
+            <div id="grid-promos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- JS insertará aquí -->
+            </div>
+        </div>
+
+        <!-- Categoría: Sushis Especiales -->
+        <div class="mb-12">
+            <div class="flex items-center gap-3 mb-6">
+                <h2 class="text-2xl font-bold text-white text-red-500">Sushis Especiales ($90)</h2>
+                <div class="h-1 flex-1 bg-gray-800 rounded"></div>
+            </div>
+            <div id="grid-especiales" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- JS insertará aquí -->
+            </div>
+        </div>
+
+        <!-- Categoría: Sushis Clásicos -->
+        <div class="mb-12">
+            <div class="flex items-center gap-3 mb-6">
+                <h2 class="text-2xl font-bold text-white">Sushis Clásicos ($75)</h2>
+                <div class="h-1 flex-1 bg-gray-800 rounded"></div>
+            </div>
+            <div id="grid-clasicos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- JS insertará aquí -->
+            </div>
+        </div>
+
+        <!-- Categoría: Hamburguesas & Arroz -->
+        <div class="mb-12">
+            <div class="flex items-center gap-3 mb-6">
+                <h2 class="text-2xl font-bold text-white">Burgers & Yakimeshi</h2>
+                <div class="h-1 flex-1 bg-gray-800 rounded"></div>
+            </div>
+            <div id="grid-extras" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- JS insertará aquí -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Carrito Modal -->
+    <div id="cart-modal" class="modal fixed inset-0 z-50 flex justify-end bg-black bg-opacity-80 backdrop-blur-sm">
+        <div class="modal-content bg-gray-900 w-full max-w-md h-full shadow-2xl flex flex-col border-l border-gray-800">
+            
+            <!-- Modal Header -->
+            <div class="bg-gray-800 p-4 text-white flex justify-between items-center shadow-md border-b border-gray-700">
+                <h3 class="font-bold text-lg text-red-500"><i class="fa-solid fa-receipt mr-2"></i>Tu Pedido</h3>
+                <button onclick="toggleCart()" class="text-gray-400 hover:text-white transition bg-gray-700 hover:bg-gray-600 w-8 h-8 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Cart Items Area -->
+            <div id="cart-items-container" class="cart-items flex-1 p-4 overflow-y-auto bg-gray-900">
+                <div class="text-center text-gray-500 mt-20">
+                    <i class="fa-solid fa-basket-shopping text-6xl mb-4 opacity-30"></i>
+                    <p class="text-lg">Tu carrito está vacío</p>
+                    <p class="text-sm opacity-60">¡Agrega unos rollos deliciosos!</p>
+                </div>
+            </div>
+
+            <!-- Checkout Form Section -->
+            <div class="p-5 bg-gray-800 border-t border-gray-700 shadow-[0_-5px_15px_rgba(0,0,0,0.3)]">
+                <div class="flex justify-between items-center mb-4 text-xl font-bold text-white">
+                    <span>Total:</span>
+                    <span id="cart-total" class="text-red-500">$0.00</span>
+                </div>
+
+                <div id="checkout-form" class="hidden">
+                    <div class="space-y-3 mb-4">
+                        <!-- Datos personales -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tu Nombre</label>
+                            <input type="text" id="customer-name" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Dirección de Entrega</label>
+                            <textarea id="customer-address" rows="2" placeholder="Calle, número, colonia..." class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 mb-2"></textarea>
+                            <input type="text" id="customer-address-details" placeholder="Referencias (Casa azul, entre calles...)" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Teléfono</label>
+                            <input type="tel" id="customer-phone" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500">
+                        </div>
+                        
+                        <!-- Sección de Método de Pago -->
+                        <div class="mt-4 pt-4 border-t border-gray-700">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Método de Pago</label>
+                            <div class="flex gap-4 mb-3">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="payment-method" value="efectivo" checked onchange="togglePaymentMethod()" class="text-red-600 focus:ring-red-500 bg-gray-700 border-gray-600">
+                                    <span class="ml-2 text-sm text-white">Efectivo</span>
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="payment-method" value="transferencia" onchange="togglePaymentMethod()" class="text-red-600 focus:ring-red-500 bg-gray-700 border-gray-600">
+                                    <span class="ml-2 text-sm text-white">Transferencia</span>
+                                </label>
+                            </div>
+
+                            <!-- Opciones Efectivo -->
+                            <div id="cash-options" class="transition-all duration-300">
+                                <div class="flex items-center bg-gray-700 p-2 rounded border border-gray-600">
+                                    <input type="checkbox" id="need-change" onchange="toggleChangeInput()" class="w-4 h-4 text-red-600 rounded bg-gray-600 border-gray-500 focus:ring-red-500">
+                                    <label for="need-change" class="ml-2 text-sm text-gray-300">¿Necesitas cambio?</label>
+                                </div>
+                                <div id="change-input-container" class="hidden mt-2 animate-fade-in">
+                                    <label class="block text-xs text-gray-400 mb-1">Pagarás con billete de:</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-gray-400">$</span>
+                                        <input type="number" id="payment-amount" placeholder="500" class="w-full bg-gray-700 border border-gray-600 rounded p-2 pl-6 text-white focus:border-red-500 outline-none">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Opciones Transferencia -->
+                            <div id="transfer-options" class="hidden transition-all duration-300">
+                                <div class="bg-gray-700 p-3 rounded border border-gray-600 text-sm">
+                                    <p class="text-gray-400 text-xs uppercase font-bold mb-2">Datos para transferir:</p>
+                                    <p class="text-white mb-1"><span class="text-gray-400">Banco:</span> <span class="font-bold">BBVA</span></p>
+                                    <p class="text-white mb-1"><span class="text-gray-400">CLABE:</span> <span class="font-mono bg-gray-800 px-1 rounded select-all">012 180 01542692475 7</span></p>
+                                    <p class="text-white"><span class="text-gray-400">Titular:</span> <span class="font-bold">So Sushi</span></p>
+                                    <p class="text-xs text-yellow-500 mt-2"><i class="fa-solid fa-triangle-exclamation"></i> Envía tu comprobante por WhatsApp al finalizar.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="handleCheckout()" id="checkout-btn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg transition transform active:scale-95 flex justify-center items-center gap-2">
+                    <i class="fa-brands fa-whatsapp text-xl"></i> Enviar Pedido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl opacity-0 transition-all duration-300 pointer-events-none z-50 font-semibold flex items-center gap-2 translate-y-10">
+        <i class="fa-solid fa-check-circle"></i> <span id="toast-msg">Producto agregado</span>
+    </div>
+
+    <!-- Javascript Logic -->
+    <script>
+        // --- DATOS DEL MENÚ ---
+        
+        // Listas de Proteínas
+        const proteinasEstandar = ["Camarón", "Pollo", "Surimi"];
+        const proteinasLimitadas = ["Pollo", "Camarón"]; // Para Yakimeshi Proteína
+        
+        // Imagen por defecto para cuando no hay una específica
+        const defaultImage = "defaul.jpg";
+
+        const menuPromos = [
+            { id: "promo1", name: "Promo 2 Clásicos", description: "Selecciona tus 2 rollos clásicos favoritos a un precio especial.", originalPrice: 150, price: 115, image: defaultImage, proteins: [] },
+            { id: "promo2", name: "Promo Empa & Bocados", description: "2 Rollos Empanizados + 1 Orden de Bocados de Arroz.", originalPrice: 255, price: 170, image: "empanizado.jpeg", proteins: [] }
+        ];
+
+        const menuEspeciales = [
+            { id: "esp1", name: "Mata Hambre", description: "Rollo empanizado con queso gratinado y topping de tocino crocante.", originalPrice: 110, price: 90, image: "mata.jpeg", proteins: proteinasEstandar },
+            { id: "esp2", name: "Nachito Roll", description: "Rollo empanizado con queso amarillo y rodajas de chile jalapeño.", originalPrice: 110, price: 90, image: "nachito.jpeg", proteins: proteinasEstandar },
+            { id: "esp3", name: "Chipotle Roll", description: "Rollo empanizado cubierto de aderezo de chipotle.", originalPrice: 110, price: 90, image: defaultImage, proteins: proteinasEstandar },
+            { id: "esp4", name: "Empanizado Coronado", description: "Rollo empanizado con topping de ensalada de surimi.", originalPrice: 110, price: 90, image: defaultImage, proteins: proteinasEstandar },
+            { id: "esp5", name: "Queso Roll", description: "Rollo empanizado con delicioso queso gratinado.", originalPrice: 110, price: 90, image: "queso.jpeg", proteins: proteinasEstandar },
+            { id: "esp6", name: "Macho Roll", description: "Rollo forrado de plátano frito con toque de salsa de anguila.", originalPrice: 110, price: 90, image: "machito.jpeg", proteins: proteinasEstandar }
+        ];
+
+        const menuClasicos = [
+            { id: "cls1", name: "Ajonjolí", description: "Rollo cubierto de ajonjolí por fuera. Relleno clásico.", originalPrice: 90, price: 75, image: defaultImage, proteins: proteinasEstandar },
+            { id: "cls2", name: "Philadelphia Empanizado", description: "Rollo empanizado con philadelphia por dentro y fuera.", originalPrice: 90, price: 75, image: defaultImage, proteins: proteinasEstandar },
+            { id: "cls3", name: "Aguacatito", description: "Rollo forrado de aguacate fresco. Relleno a elegir.", originalPrice: 90, price: 75, image: defaultImage, proteins: proteinasEstandar },
+            { id: "cls4", name: "Empanizado Tradicional", description: "Rollo empanizado por fuera, crujiente y delicioso.", originalPrice: 90, price: 75, image: "empanizado.jpeg", proteins: proteinasEstandar },
+            { id: "cls5", name: "Philadelphia (Natural)", description: "Rollo cubierto de queso crema por fuera. Relleno clásico.", originalPrice: 90, price: 75, image: defaultImage, proteins: proteinasEstandar }
+        ];
+
+        const menuExtras = [
+            { id: "rice1", name: "Yakimeshi Sencillo", description: "Arroz frito con vegetales y huevo (Sin carne).", originalPrice: 70, price: 50, image: "Yakimeshi-receta.jpeg", proteins: ["Vegetales"] },
+            { id: "rice2", name: "Yakimeshi Proteína", description: "Arroz frito especial con tu proteína favorita (Pollo o Camarón).", originalPrice: 85, price: 65, image: "culichi.jpeg", proteins: proteinasLimitadas },
+            { id: "app1", name: "Bocados de Arroz", description: "Brochetas empanizadas de queso manchego.", originalPrice: 65, price: 55, image: "bolitas.png", proteins: ["Queso"] }
+        ];
+
+        const allItems = [...menuPromos, ...menuEspeciales, ...menuClasicos, ...menuExtras];
+
+        // --- Generar Opciones de Clásicos para la Promo ---
+        const classicRollOptions = menuClasicos.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        
+        // --- Generar Opciones de Proteína para la Promo 2 (Empanizados) ---
+        const proteinOptionsForPromo2 = proteinasEstandar.map(p => `<option value="${p}">${p}</option>`).join('');
+
+        let cart = [];
+        let isCheckoutMode = false;
+
+        // --- Renderizado del Menú ---
+        function createCard(item, isOffer) {
+            const offerBadge = isOffer ? `<div class="badge-offer">Oferta</div>` : '';
+            
+            let selectorHTML = '';
+
+            // Lógica Especial para la Promoción 1 (2 Clásicos)
+            if (item.id === 'promo1') {
+                selectorHTML = `
+                    <div class="bg-gray-700/50 p-2 rounded mb-2 border border-gray-600">
+                        <div class="mb-2">
+                            <label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Rollo 1</label>
+                            <select id="promo1-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">
+                                ${classicRollOptions}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Rollo 2</label>
+                            <select id="promo2-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">
+                                ${classicRollOptions}
+                            </select>
+                        </div>
+                    </div>
+                `;
+            } 
+            // Lógica Especial para la Promoción 2 (2 Empanizados + Bocados)
+            else if (item.id === 'promo2') {
+                selectorHTML = `
+                    <div class="bg-gray-700/50 p-2 rounded mb-2 border border-gray-600">
+                        <div class="mb-2">
+                            <label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Proteína Empanizado 1</label>
+                            <select id="promo2-p1-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">
+                                ${proteinOptionsForPromo2}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Proteína Empanizado 2</label>
+                            <select id="promo2-p2-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">
+                                ${proteinOptionsForPromo2}
+                            </select>
+                        </div>
+                        <div class="mt-1 text-[10px] text-yellow-500 font-medium text-center italic"><i class="fa-solid fa-plus"></i> Bocados de Arroz incluido</div>
+                    </div>
+                `;
+            }
+            else {
+                // Selector Normal de Proteína
+                const proteinOptions = item.proteins.map(p => `<option value="${p}">${p}</option>`).join('');
+                selectorHTML = `
+                    <div class="flex items-center gap-2 mb-2">
+                         <i class="fa-solid fa-utensils text-gray-500 text-xs"></i>
+                         <select id="protein-${item.id}" class="w-full bg-white text-sm text-black rounded p-1 focus:outline-none border border-gray-600">
+                            ${proteinOptions}
+                        </select>
+                    </div>
+                `;
+            }
+            
+            return `
+            <div class="bg-gray-800 rounded-xl overflow-hidden sushi-card flex flex-col h-full border border-gray-700 shadow-lg relative group">
+                ${offerBadge}
+                <div class="h-48 md:h-56 lg:h-64 overflow-hidden relative">
+                    <div class="sushi-image-wrapper absolute inset-0">
+                        <img src="${item.image}" alt="${item.name}" class="transition transform group-hover:scale-105">
+                    </div>
+                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent h-20 opacity-90"></div>
+                    
+                    <div class="absolute bottom-2 right-2 flex flex-col items-end">
+                        <span class="text-xs text-gray-300 line-through font-semibold bg-black/50 px-1 rounded">$${item.originalPrice}</span>
+                        <span class="bg-red-600 text-white px-3 py-0.5 rounded-lg font-bold shadow-lg text-lg">$${item.price}</span>
+                    </div>
+                </div>
+                <div class="p-4 flex-1 flex flex-col">
+                    <h3 class="font-bold text-xl mb-1 text-white">${item.name}</h3>
+                    <p class="text-gray-400 text-xs mb-3 flex-1 leading-relaxed">${item.description}</p>
+                    
+                    <div class="mt-auto bg-gray-900/50 p-2 rounded-lg border border-gray-700">
+                        ${selectorHTML}
+                        
+                        <button onclick="addToCart('${item.id}')" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition duration-300 flex items-center justify-center gap-2 shadow-lg active:scale-95 text-sm">
+                            <i class="fa-solid fa-plus"></i> Agregar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            `;
+        }
+
+        function renderMenu() {
+            document.getElementById('grid-promos').innerHTML = menuPromos.map(item => createCard(item, true)).join('');
+            document.getElementById('grid-especiales').innerHTML = menuEspeciales.map(item => createCard(item, true)).join('');
+            document.getElementById('grid-clasicos').innerHTML = menuClasicos.map(item => createCard(item, true)).join('');
+            document.getElementById('grid-extras').innerHTML = menuExtras.map(item => createCard(item, true)).join('');
+        }
+
+        // --- Funciones del Carrito ---
+
+        function addToCart(id) {
+            const item = allItems.find(i => i.id === id);
+            let selectedVariant = "";
+
+            if (id === 'promo1') {
+                const r1 = document.getElementById(`promo1-${id}`).value;
+                const r2 = document.getElementById(`promo2-${id}`).value;
+                selectedVariant = `${r1} + ${r2}`;
+            } else if (id === 'promo2') {
+                const p1 = document.getElementById(`promo2-p1-${id}`).value;
+                const p2 = document.getElementById(`promo2-p2-${id}`).value;
+                selectedVariant = `Empanizados (${p1} y ${p2}) + Bocados`;
+            } else {
+                const proteinSelect = document.getElementById(`protein-${id}`);
+                selectedVariant = proteinSelect.value;
+            }
+
+            const cartItemId = `${id}-${selectedVariant}`;
+            const existingItem = cart.find(i => i.cartId === cartItemId);
+
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                cart.push({
+                    cartId: cartItemId,
+                    originalId: id,
+                    name: item.name,
+                    price: item.price,
+                    protein: selectedVariant, // Reutilizamos este campo para mostrar la variante/promo
+                    image: item.image,
+                    quantity: 1,
+                    note: "" 
+                });
+            }
+
+            updateCartUI();
+            showToast(`${item.name} agregado`);
+        }
+
+        function removeFromCart(cartId) {
+            cart = cart.filter(item => item.cartId !== cartId);
+            updateCartUI();
+        }
+
+        function updateQuantity(cartId, change) {
+            const item = cart.find(i => i.cartId === cartId);
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) {
+                    removeFromCart(cartId);
+                } else {
+                    updateCartUI();
+                }
+            }
+        }
+
+        function updateItemNote(cartId, text) {
+            const item = cart.find(i => i.cartId === cartId);
+            if (item) {
+                item.note = text;
+            }
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cart-items-container');
+            const totalEl = document.getElementById('cart-total');
+            const countEl = document.getElementById('cart-count');
+            const formSection = document.getElementById('checkout-form');
+            const checkoutBtn = document.getElementById('checkout-btn');
+
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            countEl.innerText = totalItems;
+            
+            if(totalItems > 0) {
+                countEl.classList.add('scale-125');
+                setTimeout(() => countEl.classList.remove('scale-125'), 200);
+            }
+
+            const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            totalEl.innerText = `$${totalPrice.toFixed(2)}`;
+
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-gray-500 mt-20 flex flex-col items-center">
+                        <i class="fa-solid fa-basket-shopping text-6xl mb-4 opacity-20"></i>
+                        <p class="text-lg font-medium">Carrito vacío</p>
+                        <button onclick="toggleCart()" class="mt-4 text-red-500 text-sm hover:text-red-400">Ver Menú</button>
+                    </div>`;
+                formSection.classList.add('hidden');
+                checkoutBtn.innerHTML = `<span class="opacity-50">Carrito Vacío</span>`;
+                checkoutBtn.disabled = true;
+                checkoutBtn.classList.add('bg-gray-700', 'cursor-not-allowed');
+                checkoutBtn.classList.remove('bg-green-600', 'hover:bg-green-500');
+                isCheckoutMode = false;
+            } else {
+                checkoutBtn.disabled = false;
+                checkoutBtn.classList.remove('bg-gray-700', 'cursor-not-allowed');
+                checkoutBtn.classList.add('bg-green-600', 'hover:bg-green-500');
+                
+                if (!isCheckoutMode) {
+                   checkoutBtn.innerHTML = `Continuar Compra <i class="fa-solid fa-arrow-right"></i>`;
+                }
+
+                container.innerHTML = cart.map(item => `
+                    <div class="bg-gray-800 p-3 rounded-lg shadow-sm mb-3 border border-gray-700 relative overflow-hidden group">
+                        <div class="flex items-center mb-2">
+                            <img src="${item.image}" class="w-14 h-14 rounded-md object-contain bg-gray-800 p-1 border border-gray-600" alt="${item.name}">
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-sm text-gray-200 truncate">${item.name}</h4>
+                                <p class="text-xs text-gray-400 mb-0.5 truncate">${item.protein}</p>
+                                <p class="text-red-500 font-bold text-sm">$${(item.price * item.quantity).toFixed(2)}</p>
+                            </div>
+                            <div class="flex items-center gap-2 bg-gray-900 rounded-lg p-1 border border-gray-700">
+                                <button onclick="updateQuantity('${item.cartId}', -1)" class="text-gray-400 hover:text-red-500 w-6 h-6 flex items-center justify-center transition"><i class="fa-solid fa-minus text-xs"></i></button>
+                                <span class="text-sm font-bold text-white w-4 text-center select-none">${item.quantity}</span>
+                                <button onclick="updateQuantity('${item.cartId}', 1)" class="text-gray-400 hover:text-green-500 w-6 h-6 flex items-center justify-center transition"><i class="fa-solid fa-plus text-xs"></i></button>
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-700 pt-2">
+                            <input type="text" 
+                                placeholder="Nota: sin pepino, extra soya..." 
+                                value="${item.note || ''}"
+                                oninput="updateItemNote('${item.cartId}', this.value)"
+                                class="w-full bg-gray-900/50 text-xs text-gray-300 border border-gray-600 rounded px-2 py-1 focus:border-red-500 focus:outline-none placeholder-gray-600">
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // --- UI Interactions ---
+
+        function toggleCart() {
+            const modal = document.getElementById('cart-modal');
+            const body = document.body;
+            
+            modal.classList.toggle('active');
+            
+            // Bloquear/Desbloquear el scroll del fondo
+            if (modal.classList.contains('active')) {
+                body.classList.add('modal-open');
+            } else {
+                body.classList.remove('modal-open');
+            }
+        }
+
+        function toggleChangeInput() {
+            const checkbox = document.getElementById('need-change');
+            const container = document.getElementById('change-input-container');
+            if (checkbox.checked) {
+                container.classList.remove('hidden');
+                document.getElementById('payment-amount').focus();
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function togglePaymentMethod() {
+            const method = document.querySelector('input[name="payment-method"]:checked').value;
+            const cashOptions = document.getElementById('cash-options');
+            const transferOptions = document.getElementById('transfer-options');
+
+            if (method === 'efectivo') {
+                cashOptions.classList.remove('hidden');
+                transferOptions.classList.add('hidden');
+            } else {
+                cashOptions.classList.add('hidden');
+                transferOptions.classList.remove('hidden');
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-msg');
+            msgEl.innerText = message;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translate(-50%, 0)';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, 40px)';
+            }, 2000);
+        }
+
+        // --- Checkout Logic (WhatsApp) ---
+
+        function handleCheckout() {
+            const formSection = document.getElementById('checkout-form');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            
+            if (!isCheckoutMode) {
+                formSection.classList.remove('hidden');
+                checkoutBtn.innerHTML = `<i class="fa-brands fa-whatsapp text-xl"></i> Confirmar Pedido`;
+                isCheckoutMode = true;
+                setTimeout(() => {
+                    const modalContent = document.querySelector('.cart-items');
+                    modalContent.scrollTop = modalContent.scrollHeight;
+                }, 100);
+                return;
+            }
+
+            const name = document.getElementById('customer-name').value.trim();
+            const address = document.getElementById('customer-address').value.trim();
+            const addressDetails = document.getElementById('customer-address-details').value.trim();
+            const phone = document.getElementById('customer-phone').value.trim();
+            
+            const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+            const needChange = document.getElementById('need-change').checked;
+            const paymentAmount = document.getElementById('payment-amount').value;
+            
+            if (!name || !address || !phone) {
+                alert("Por favor completa tu nombre, dirección y teléfono.");
+                return;
+            }
+
+            if (paymentMethod === 'efectivo' && needChange && !paymentAmount) {
+                alert("Indica con cuánto pagarás para calcular el cambio.");
+                return;
+            }
+
+            const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            // --- FORMATO DE MENSAJE PROFESIONAL ---
+            let message = `🍣 *NUEVO PEDIDO WEB - SO SUSHI* 🍣\n`;
+            message += `📅 *Fecha:* ${new Date().toLocaleDateString()}\n`;
+            message += `────────────────────\n\n`;
+            
+            message += `👤 *DATOS DEL CLIENTE*\n`;
+            message += `▪️ *Cliente:* ${name}\n`;
+            message += `▪️ *Tel:* ${phone}\n`;
+            message += `📍 *Dirección:* ${address}\n`;
+            if(addressDetails) {
+                message += `📝 *Ref:* ${addressDetails}\n`;
+            }
+            
+            message += `\n📋 *DETALLE DE LA ORDEN*\n`;
+            message += `────────────────────\n`;
+            
+            cart.forEach(item => {
+                const subtotal = item.price * item.quantity;
+                message += `🥢 *${item.quantity}x ${item.name}*\n`;
+                message += `   ↳ 🐟 ${item.protein}\n`;
+                if(item.note) {
+                    message += `   ↳ ✏️ _${item.note}_\n`;
+                }
+                message += `   ↳ 💲$${subtotal.toFixed(2)}\n\n`;
+            });
+
+            message += `────────────────────\n`;
+            message += `💰 *TOTAL A PAGAR: $${totalPrice.toFixed(2)}*\n`;
+            message += `────────────────────\n\n`;
+            
+            message += `💳 *INFORMACIÓN DE PAGO*\n`;
+            
+            if (paymentMethod === 'efectivo') {
+                message += `💵 *Método:* Efectivo\n`;
+                if (needChange) {
+                    const change = parseFloat(paymentAmount) - totalPrice;
+                    message += `🔢 *Paga con:* $${paymentAmount}\n`;
+                    message += `🔄 *Cambio:* $${change > 0 ? change.toFixed(2) : '0.00'}\n`;
+                } else {
+                    message += `✅ *Pago:* Importe Exacto\n`;
+                }
+            } else {
+                message += `🏦 *Método:* Transferencia Bancaria\n`;
+                message += `📎 _(Adjunto comprobante a continuación)_\n`;
+            }
+
+            message += `\n📍 *Ubicación enviada automáticamente*`;
+
+            const NUMERO_WHATSAPP = "3348168590"; 
+            
+            const url = `https://wa.me/521${NUMERO_WHATSAPP}?text=${encodeURIComponent(message)}`;
+            
+            window.open(url, '_blank');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMenu();
+            updateCartUI();
+        });
+
+    </script>
+</body>
+</html>
