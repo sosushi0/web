@@ -209,7 +209,8 @@
             </div>
 
             <!-- Checkout Form Section -->
-            <div class="p-5 bg-gray-800 border-t border-gray-700 shadow-[0_-5px_15px_rgba(0,0,0,0.3)]">
+            <!-- CORRECCIÓN: Agregué 'overflow-y-auto' y 'max-h-[80vh]' para que si el contenido crece, aparezca scroll y no esconda el botón -->
+            <div class="p-5 bg-gray-800 border-t border-gray-700 shadow-[0_-5px_15px_rgba(0,0,0,0.3)] overflow-y-auto max-h-[80vh]">
                 <div class="flex justify-between items-center mb-4 text-xl font-bold text-white">
                     <span>Total:</span>
                     <span id="cart-total" class="text-red-500">$0.00</span>
