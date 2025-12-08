@@ -321,7 +321,7 @@
         const defaultImage = "defaul.jpg";
 
         const menuPromos = [
-            { id: "promo1", name: "Promo 2 Clásicos", description: "Selecciona tus 2 rollos clásicos favoritos a un precio especial.", originalPrice: 150, price: 100, image: defaultImage, proteins: [] },
+            { id: "promo1", name: "Promo 2 Clásicos", description: "Selecciona tus 2 rollos favoritos (Ajonjolí o Empanizado).", originalPrice: 150, price: 100, image: defaultImage, proteins: [] },
             { id: "promo2", name: "Promo Empa & Bocados", description: "2 Rollos Empanizados + 1 Orden de Bocados de Arroz.", originalPrice: 255, price: 170, image: "empanizado.jpeg", proteins: [] }
         ];
 
@@ -355,11 +355,16 @@
 
         const allItems = [...menuPromos, ...menuEspeciales, ...menuClasicos, ...menuExtras];
 
-        // --- Generar Opciones de Clásicos para la Promo ---
-        const classicRollOptions = menuClasicos.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-        
         // --- Generar Opciones de Proteína para la Promo 2 (Empanizados) ---
         const proteinOptionsForPromo2 = proteinasEstandar.map(p => `<option value="${p}">${p}</option>`).join('');
+
+        // --- Generar Opciones ESPECIALES para Promo 1 (Solo Ajonjolí y Empanizado Tradicional) ---
+        // Filtramos solo los rolls permitidos
+        const allowedPromoRolls = ["Ajonjolí", "Empanizado Tradicional"];
+        const promo1Options = menuClasicos
+            .filter(c => allowedPromoRolls.includes(c.name))
+            .map(c => `<option value="${c.name}">${c.name}</option>`)
+            .join('');
 
         let cart = [];
         let isCheckoutMode = false;
@@ -370,20 +375,20 @@
             
             let selectorHTML = '';
 
-            // Lógica Especial para la Promoción 1 (2 Clásicos)
+            // Lógica Especial para la Promoción 1 (2 Clásicos LIMITADOS)
             if (item.id === 'promo1') {
                 selectorHTML = `
                     <div class="bg-gray-700/50 p-2 rounded mb-2 border border-gray-600">
                         <div class="mb-2">
                             <label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Rollo 1</label>
                             <select id="promo1-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">
-                                ${classicRollOptions}
+                                ${promo1Options}
                             </select>
                         </div>
                         <div>
                             <label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Rollo 2</label>
                             <select id="promo2-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">
-                                ${classicRollOptions}
+                                ${promo1Options}
                             </select>
                         </div>
                     </div>
@@ -701,11 +706,11 @@
             cart.forEach(item => {
                 const subtotal = item.price * item.quantity;
                 message += `🥢 *${item.quantity}x ${item.name}*\n`;
-                message += `   ↳ 🐟 ${item.protein}\n`;
+                message += `    ↳ 🐟 ${item.protein}\n`;
                 if(item.note) {
-                    message += `   ↳ ✏️ _${item.note}_\n`;
+                    message += `    ↳ ✏️ _${item.note}_\n`;
                 }
-                message += `   ↳ 💲$${subtotal.toFixed(2)}\n\n`;
+                message += `    ↳ 💲$${subtotal.toFixed(2)}\n\n`;
             });
 
             message += `────────────────────\n`;
@@ -748,6 +753,3 @@
     </script>
 </body>
 </html>
-
-
-
