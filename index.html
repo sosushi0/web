@@ -8,27 +8,44 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #1a1a1a;
+            background-color: #111827;
             color: #f3f4f6;
+            background-image: radial-gradient(circle at 50% 50%, #1f2937 0%, #111827 100%);
+            background-attachment: fixed;
         }
+        
+        /* Animación de fondo "Neural Pulse" */
+        @keyframes neural-pulse {
+            0% { background-color: #111827; }
+            50% { background-color: #131b2e; }
+            100% { background-color: #111827; }
+        }
+        body.ai-active {
+            animation: neural-pulse 4s infinite ease-in-out;
+        }
+
         /* Agregamos comportamiento de scroll suave global */
         html {
             scroll-behavior: smooth;
         }
         .sushi-card {
-            background-color: #262626;
-            transition: all 0.3s ease;
+            background-color: #1f2937;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #374151;
         }
         .sushi-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
             border-color: #ef4444;
+            z-index: 10;
         }
         .modal {
             transition: opacity 0.3s ease-in-out;
@@ -53,7 +70,6 @@
             background-color: #4b5563;
             border-radius: 4px;
         }
-        /* Clase para bloquear el scroll del body cuando el modal está abierto */
         body.modal-open {
             overflow: hidden;
         }
@@ -72,6 +88,32 @@
             z-index: 10;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
+        /* Etiquetas IA */
+        .badge-ai {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6); /* Azul a Morado */
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            position: absolute;
+            top: 10px;
+            right: 10px; 
+            z-index: 10;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            animation: pulse-border 2s infinite;
+            backdrop-filter: blur(4px);
+        }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); transform: scale(1); }
+        }
+
         .strike-price {
             text-decoration: line-through;
             color: #9ca3af;
@@ -79,26 +121,24 @@
             margin-right: 5px;
         }
 
-        /* Wrapper para mostrar la imagen completa sin recortar */
+        /* Wrapper para mostrar la imagen completa */
         .sushi-image-wrapper {
             display: flex;
             align-items: center;
             justify-content: center;
             height: 100%;
-            background-color: #111827; /* color de fondo para evitar franjas blancas */
+            background-color: #111827;
             overflow: hidden;
         }
         .sushi-image-wrapper img {
-            /* Ajuste para que la imagen llene la altura disponible y sea más grande */
             height: 100%;
             width: auto;
             max-width: none;
-            object-fit: contain; /* muestra la imagen completa */
+            object-fit: contain;
             object-position: center;
             transition: transform 0.5s ease;
         }
         
-        /* Animación para el banner de envío gratis */
         @keyframes pulse-green {
             0%, 100% { background-color: #16a34a; }
             50% { background-color: #15803d; }
@@ -107,7 +147,6 @@
             animation: pulse-green 2s infinite;
         }
         
-        /* Animación de carga para ubicación */
         .loading-spin {
             animation: spin 1s linear infinite;
         }
@@ -115,31 +154,134 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+
+        /* --- Estilos para el Chat IA --- */
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            animation: popIn 0.3s ease-out;
+        }
+        .chat-bubble.bot {
+            background-color: #374151; /* gray-700 */
+            color: white;
+            border-bottom-left-radius: 2px;
+            align-self: flex-start;
+            border-left: 3px solid #3b82f6;
+        }
+        .chat-bubble.user {
+            background-color: #dc2626; /* red-600 */
+            color: white;
+            border-bottom-right-radius: 2px;
+            align-self: flex-end;
+            text-align: right;
+        }
+        .chat-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        .chat-option-btn {
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .chat-option-btn:hover {
+            background-color: #ef4444;
+            color: white;
+            transform: translateY(-2px);
+        }
+        /* Indicador de escritura */
+        .typing-indicator {
+            display: inline-flex;
+            gap: 4px;
+            padding: 8px 12px;
+            background-color: #374151;
+            border-radius: 15px;
+            border-bottom-left-radius: 2px;
+            margin-bottom: 10px;
+            animation: popIn 0.3s ease-out;
+        }
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #9ca3af;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Estilos Filtros IA */
+        .ai-filter-btn {
+            transition: all 0.3s ease;
+        }
+        .ai-filter-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
     </style>
 </head>
-<body class="text-gray-100">
+<body class="text-gray-100 ai-active" onclick="resetIdleTimer()" onscroll="resetIdleTimer()">
 
     <!-- Header / Navbar -->
-    <nav class="bg-black shadow-lg fixed w-full z-50 top-0 border-b border-gray-800">
-        <!-- Banner de Envío Gratis -->
-        <div class="free-shipping-banner text-white text-center py-1 text-xs font-bold tracking-wider uppercase">
+    <nav class="bg-black/95 backdrop-blur-md shadow-lg fixed w-full z-50 top-0 border-b border-gray-800">
+        <!-- Banner de Estado -->
+        <div id="status-banner" class="free-shipping-banner text-white text-center py-1 text-xs font-bold tracking-wider uppercase transition-colors duration-300">
             <i class="fa-solid fa-motorcycle mr-1"></i> ¡Envío GRATIS &lt; 1km o pedidos +$250! <i class="fa-solid fa-motorcycle ml-1"></i>
         </div>
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-14"> <!-- Ajuste altura por el banner -->
+            <div class="flex justify-between items-center h-14">
                 <div class="flex items-center gap-2">
-                    <div class="bg-red-600 w-8 h-8 rounded-full flex items-center justify-center">
+                    <div class="bg-gradient-to-br from-red-600 to-red-800 w-9 h-9 rounded-full flex items-center justify-center shadow-red-500/50 shadow-lg">
                         <i class="fa-solid fa-fish-fins text-white text-sm"></i>
                     </div>
-                    <span class="font-bold text-xl tracking-wide text-white">SO <span class="text-red-500">SUSHI</span></span>
+                    <span class="font-bold text-xl tracking-wide text-white">SO <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">SUSHI</span></span>
                 </div>
-                <div class="relative cursor-pointer hover:scale-105 transition" onclick="toggleCart()">
-                    <div class="flex items-center gap-2">
-                        <span class="hidden md:block text-sm font-semibold text-gray-300">Ver Pedido</span>
-                        <div class="relative">
-                            <i class="fa-solid fa-cart-shopping text-2xl text-white hover:text-red-500 transition"></i>
-                            <span id="cart-count" class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-black">0</span>
+                
+                <div class="flex items-center gap-3">
+                    <!-- Botón IA -->
+                    <button onclick="toggleAI()" class="group relative bg-gray-800 hover:bg-gray-700 text-blue-400 border border-blue-900/50 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 transition overflow-hidden">
+                        <div class="absolute inset-0 bg-blue-500/10 group-hover:bg-blue-500/20 transition"></div>
+                        <i class="fa-solid fa-robot animate-bounce"></i> <span class="hidden sm:inline">Sushito</span>
+                    </button>
+
+                    <!-- Carrito -->
+                    <div class="relative cursor-pointer hover:scale-110 transition duration-300" onclick="toggleCart()">
+                        <div class="flex items-center gap-2">
+                            <span class="hidden md:block text-sm font-semibold text-gray-300">Mi Pedido</span>
+                            <div class="relative">
+                                <i class="fa-solid fa-cart-shopping text-2xl text-white hover:text-red-500 transition"></i>
+                                <span id="cart-count" class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-black shadow">0</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -148,30 +290,46 @@
     </nav>
 
     <!-- Hero Section -->
-    <div class="relative bg-gray-900 h-64 mt-20 flex items-center justify-center overflow-hidden"> <!-- mt-20 para compensar banner -->
-        <img src="https://images.unsplash.com/photo-1553621042-f6e147245754?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Sushi Banner" class="absolute w-full h-full object-cover opacity-40">
-        <div class="relative z-10 text-center px-4 max-w-2xl">
-            <h1 class="text-5xl font-bold text-white mb-2 drop-shadow-xl">SO SUSHI</h1>
-            <p class="text-gray-300 text-lg font-light mb-2">¡Grandes descuentos en todo el menú!</p>
-            <div class="inline-block bg-green-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow mb-4">
-                <i class="fa-solid fa-check"></i> Envío Gratis &lt; 1km o &gt; $250
+    <div class="relative bg-gray-900 h-72 mt-20 flex items-center justify-center overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1553621042-f6e147245754?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Sushi Banner" class="absolute w-full h-full object-cover opacity-30 transform hover:scale-105 transition duration-[20s]">
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/50 to-gray-900"></div>
+        
+        <div class="relative z-10 text-center px-4 max-w-3xl">
+            <div class="inline-flex items-center gap-2 mb-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 backdrop-blur-sm">
+                <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                <span class="text-blue-200 text-xs font-bold tracking-wide uppercase">IA Activada &bull; Abierto hasta 11 PM</span>
             </div>
-            <div class="flex justify-center gap-3">
-                <a href="#menu-start" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full text-sm font-bold transition shadow-lg">
-                    Ver Menú
-                </a>
+            <h1 class="text-5xl md:text-6xl font-bold text-white mb-2 drop-shadow-2xl tracking-tight">SO SUSHI</h1>
+            <p class="text-gray-300 text-lg font-light mb-6">Fusión japonesa con inteligencia de sabor.</p>
+            
+            <div id="hero-badge" class="inline-block bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg shadow-green-900/50 transition transform hover:-translate-y-1 cursor-default">
+                <i class="fa-solid fa-check-circle mr-1"></i> Envío Gratis &lt; 1km
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros Inteligentes -->
+    <div class="sticky top-20 z-40 bg-gray-900/95 backdrop-blur-md border-b border-gray-800 py-3 mb-6 transition-all" id="ai-filters-bar">
+        <div class="max-w-7xl mx-auto px-4 overflow-x-auto">
+            <div class="flex items-center gap-3 min-w-max">
+                <span class="text-blue-400 text-xs font-bold uppercase tracking-wider"><i class="fa-solid fa-microchip mr-1"></i> Filtros IA:</span>
+                <button onclick="applyAIFilter('all')" class="ai-filter-btn active px-4 py-1.5 rounded-full text-xs font-medium border border-gray-700 bg-gray-800 text-gray-300 hover:text-white">Todo</button>
+                <button onclick="applyAIFilter('promo')" class="ai-filter-btn px-4 py-1.5 rounded-full text-xs font-medium border border-gray-700 bg-gray-800 text-gray-300 hover:text-white hover:border-yellow-500"><i class="fa-solid fa-tag text-yellow-500 mr-1"></i> Promos</button>
+                <button onclick="applyAIFilter('spicy')" class="ai-filter-btn px-4 py-1.5 rounded-full text-xs font-medium border border-gray-700 bg-gray-800 text-gray-300 hover:text-white hover:border-red-500"><i class="fa-solid fa-fire text-red-500 mr-1"></i> Picante</button>
+                <button onclick="applyAIFilter('crunchy')" class="ai-filter-btn px-4 py-1.5 rounded-full text-xs font-medium border border-gray-700 bg-gray-800 text-gray-300 hover:text-white hover:border-orange-500"><i class="fa-solid fa-cookie-bite text-orange-500 mr-1"></i> Crujiente</button>
+                <button onclick="applyAIFilter('fresh')" class="ai-filter-btn px-4 py-1.5 rounded-full text-xs font-medium border border-gray-700 bg-gray-800 text-gray-300 hover:text-white hover:border-green-500"><i class="fa-solid fa-leaf text-green-500 mr-1"></i> Fresco</button>
             </div>
         </div>
     </div>
 
     <!-- Menu Section -->
-    <div id="menu-start" class="max-w-7xl mx-auto px-4 py-8 pb-24">
+    <div id="menu-start" class="max-w-7xl mx-auto px-4 pb-24 min-h-[60vh]">
         
         <!-- Categoría: Promociones -->
-        <div class="mb-12">
+        <div class="menu-category mb-12" data-category="promo">
             <div class="flex items-center gap-3 mb-6">
-                <h2 class="text-2xl font-bold text-white text-yellow-500"><i class="fa-solid fa-star mr-2"></i>Promociones</h2>
-                <div class="h-1 flex-1 bg-gray-800 rounded"></div>
+                <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600"><i class="fa-solid fa-star mr-2 text-yellow-500"></i>Promociones</h2>
+                <div class="h-px flex-1 bg-gradient-to-r from-yellow-900/50 to-transparent"></div>
             </div>
             <div id="grid-promos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- JS insertará aquí -->
@@ -179,10 +337,10 @@
         </div>
 
         <!-- Categoría: Sushis Especiales -->
-        <div class="mb-12">
+        <div class="menu-category mb-12" data-category="special">
             <div class="flex items-center gap-3 mb-6">
-                <h2 class="text-2xl font-bold text-white text-red-500">Sushis Especiales ($80)</h2>
-                <div class="h-1 flex-1 bg-gray-800 rounded"></div>
+                <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-pink-500">Sushis Especiales ($80)</h2>
+                <div class="h-px flex-1 bg-gradient-to-r from-red-900/50 to-transparent"></div>
             </div>
             <div id="grid-especiales" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- JS insertará aquí -->
@@ -190,10 +348,10 @@
         </div>
 
         <!-- Categoría: Sushis Clásicos -->
-        <div class="mb-12">
+        <div class="menu-category mb-12" data-category="classic">
             <div class="flex items-center gap-3 mb-6">
                 <h2 class="text-2xl font-bold text-white">Sushis Clásicos ($70)</h2>
-                <div class="h-1 flex-1 bg-gray-800 rounded"></div>
+                <div class="h-px flex-1 bg-gray-800"></div>
             </div>
             <div id="grid-clasicos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- JS insertará aquí -->
@@ -201,25 +359,32 @@
         </div>
 
         <!-- Categoría: Hamburguesas & Arroz -->
-        <div class="mb-12">
+        <div class="menu-category mb-12" data-category="extra">
             <div class="flex items-center gap-3 mb-6">
                 <h2 class="text-2xl font-bold text-white">Burgers & Yakimeshi</h2>
-                <div class="h-1 flex-1 bg-gray-800 rounded"></div>
+                <div class="h-px flex-1 bg-gray-800"></div>
             </div>
             <div id="grid-extras" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- JS insertará aquí -->
             </div>
         </div>
 
+        <!-- Mensaje sin resultados (Oculto por defecto) -->
+        <div id="no-results" class="hidden text-center py-20">
+            <i class="fa-solid fa-robot text-6xl text-gray-700 mb-4 animate-bounce"></i>
+            <p class="text-gray-400 text-xl">La IA no encontró resultados para este filtro.</p>
+            <button onclick="applyAIFilter('all')" class="mt-4 text-blue-400 hover:text-blue-300 underline">Ver todo el menú</button>
+        </div>
+
     </div>
 
     <!-- Carrito Modal -->
-    <div id="cart-modal" class="modal fixed inset-0 z-50 flex justify-end bg-black bg-opacity-80 backdrop-blur-sm">
+    <div id="cart-modal" class="modal fixed inset-0 z-50 flex justify-end bg-black/90 backdrop-blur-sm">
         <div class="modal-content bg-gray-900 w-full max-w-md h-full shadow-2xl flex flex-col border-l border-gray-800">
             
             <!-- Modal Header -->
             <div class="bg-gray-800 p-4 text-white flex justify-between items-center shadow-md border-b border-gray-700">
-                <h3 class="font-bold text-lg text-red-500"><i class="fa-solid fa-receipt mr-2"></i>Tu Pedido</h3>
+                <h3 class="font-bold text-lg text-red-500 flex items-center gap-2"><i class="fa-solid fa-receipt"></i> Tu Pedido</h3>
                 <button onclick="toggleCart()" class="text-gray-400 hover:text-white transition bg-gray-700 hover:bg-gray-600 w-8 h-8 rounded-full flex items-center justify-center">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
@@ -232,6 +397,21 @@
                     <p class="text-lg">Tu carrito está vacío</p>
                     <p class="text-sm opacity-60">¡Agrega unos rollos deliciosos!</p>
                 </div>
+            </div>
+
+            <!-- AI Suggestion Box (Hidden by default) -->
+            <div id="ai-suggestion-box" class="hidden bg-gradient-to-r from-blue-900/40 to-purple-900/40 border-y border-blue-800 p-3 flex items-center gap-3 animate-fade-in relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 w-12 h-12 bg-blue-500 blur-xl opacity-20 rounded-full"></div>
+                <div class="bg-blue-600 rounded-full w-10 h-10 flex-shrink-0 flex items-center justify-center text-white shadow-lg animate-pulse">
+                    <i class="fa-solid fa-lightbulb"></i>
+                </div>
+                <div class="flex-1 relative z-10">
+                    <p class="text-[10px] text-blue-300 font-bold uppercase tracking-wider mb-0.5">Sugerencia IA 🤖</p>
+                    <p id="ai-suggestion-text" class="text-xs text-white leading-tight">¿Qué tal unos bocados para acompañar?</p>
+                </div>
+                <button id="ai-suggestion-btn" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow transition flex-shrink-0 relative z-10">
+                    + Agregar
+                </button>
             </div>
 
             <!-- Checkout Form Section -->
@@ -248,10 +428,10 @@
                 
                 <!-- Barra de progreso para envío gratis -->
                 <div id="free-shipping-progress" class="hidden mb-3">
-                    <div class="w-full bg-gray-700 rounded-full h-1.5 mb-1">
-                        <div id="progress-bar-fill" class="bg-green-500 h-1.5 rounded-full" style="width: 0%"></div>
+                    <div class="w-full bg-gray-700 rounded-full h-1.5 mb-1 overflow-hidden">
+                        <div id="progress-bar-fill" class="bg-gradient-to-r from-green-500 to-emerald-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
                     </div>
-                    <p id="progress-text" class="text-[10px] text-green-400 text-right">¡Te faltan $50 para envío gratis!</p>
+                    <p id="progress-text" class="text-[10px] text-green-400 text-right mt-1">¡Te faltan $50 para envío gratis!</p>
                 </div>
 
                 <div class="flex justify-between items-center mb-4 text-xl font-bold text-white border-t border-gray-700 pt-2">
@@ -264,27 +444,18 @@
                         <!-- Datos personales -->
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tu Nombre</label>
-                            <input type="text" id="customer-name" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500">
+                            <input type="text" id="customer-name" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 focus:bg-gray-600">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Teléfono</label>
-                            <input type="tel" id="customer-phone" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500">
+                            <input type="tel" id="customer-phone" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 focus:bg-gray-600">
                         </div>
 
-                        <!-- Sección de Ubicación Inteligente -->
-                        <div class="bg-gray-700/50 p-3 rounded border border-gray-600">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Ubicación de Entrega</label>
-                            
-                            <button onclick="calculateShipping()" id="btn-location" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-2 rounded mb-2 flex items-center justify-center gap-2 transition">
-                                <i class="fa-solid fa-location-dot"></i> 📍 Calcular Envío (GPS)
-                            </button>
-                            
-                            <div id="location-result" class="hidden text-xs mt-2 p-2 bg-gray-800 rounded border border-gray-700">
-                                <!-- Resultado JS -->
-                            </div>
-
-                            <textarea id="customer-address" rows="2" placeholder="O escribe tu dirección manual aquí..." class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 mt-2 text-sm"></textarea>
-                            <input type="text" id="customer-address-details" placeholder="Referencias (Color casa, entre calles...)" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 text-sm mt-2">
+                        <!-- Sección de Ubicación Manual (El cálculo es interno) -->
+                        <div class="bg-gray-700/50 p-3 rounded border border-gray-600 hover:border-gray-500 transition">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Dirección de Entrega</label>
+                            <textarea id="customer-address" rows="2" placeholder="Calle, número, colonia..." class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 mt-2 text-sm focus:bg-gray-600"></textarea>
+                            <input type="text" id="customer-address-details" placeholder="Referencias (Color casa, entre calles...)" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 text-sm mt-2 focus:bg-gray-600">
                         </div>
                         
                         <!-- Sección de Método de Pago -->
@@ -293,29 +464,30 @@
                             
                             <!-- Selectores de Método (Radio Buttons) -->
                             <div class="flex gap-4 mb-3">
-                                <label class="flex items-center cursor-pointer">
+                                <label class="flex items-center cursor-pointer group">
                                     <input type="radio" name="payment-method" value="transferencia" checked onchange="togglePaymentMethod()" class="text-red-600 focus:ring-red-500 bg-gray-700 border-gray-600">
-                                    <span class="ml-2 text-sm text-white">Transferencia</span>
+                                    <span class="ml-2 text-sm text-white group-hover:text-blue-400 transition">Transferencia</span>
                                 </label>
                                 <!-- Opción Efectivo (Oculta por defecto, se activa si distancia <= 1km) -->
-                                <label id="opt-cash" class="hidden items-center cursor-pointer">
+                                <label id="opt-cash" class="hidden items-center cursor-pointer group">
                                     <input type="radio" name="payment-method" value="efectivo" onchange="togglePaymentMethod()" class="text-red-600 focus:ring-red-500 bg-gray-700 border-gray-600">
-                                    <span class="ml-2 text-sm text-white">Efectivo</span>
+                                    <span class="ml-2 text-sm text-white group-hover:text-green-400 transition">Efectivo</span>
                                 </label>
                             </div>
 
                             <!-- Opciones Transferencia (Default) -->
                             <div id="transfer-options" class="transition-all duration-300">
-                                <div class="bg-gray-700 p-3 rounded border border-gray-600 text-sm">
-                                    <div class="flex items-center gap-2 mb-2">
+                                <div class="bg-gray-700 p-3 rounded border border-gray-600 text-sm relative overflow-hidden">
+                                    <div class="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-full blur-xl"></div>
+                                    <div class="flex items-center gap-2 mb-2 relative z-10">
                                         <i class="fa-solid fa-building-columns text-green-500"></i>
                                         <span class="text-white font-bold">Transferencia Bancaria</span>
                                     </div>
                                     <p class="text-gray-400 text-xs mb-2">Realiza tu pago a la siguiente cuenta:</p>
                                     
-                                    <div class="bg-gray-800 p-2 rounded mb-2">
+                                    <div class="bg-gray-800 p-2 rounded mb-2 border border-gray-700">
                                         <p class="text-white mb-1 text-xs"><span class="text-gray-400 w-16 inline-block">Banco:</span> <span class="font-bold text-white">BBVA</span></p>
-                                        <p class="text-white mb-1 text-xs"><span class="text-gray-400 w-16 inline-block">CLABE:</span> <span class="font-mono text-green-400 select-all font-bold">012 180 01542692475 7</span></p>
+                                        <p class="text-white mb-1 text-xs"><span class="text-gray-400 w-16 inline-block">CLABE:</span> <span class="font-mono text-green-400 select-all font-bold cursor-pointer hover:bg-gray-700 px-1 rounded transition" title="Copiar">012 180 01542692475 7</span></p>
                                         <p class="text-white text-xs"><span class="text-gray-400 w-16 inline-block">Titular:</span> <span class="font-bold text-white">So Sushi</span></p>
                                     </div>
                                     
@@ -346,16 +518,53 @@
                     </div>
                 </div>
 
-                <button onclick="handleCheckout()" id="checkout-btn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg transition transform active:scale-95 flex justify-center items-center gap-2">
+                <button onclick="handleCheckout()" id="checkout-btn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg transition transform active:scale-95 flex justify-center items-center gap-2 hover:shadow-green-500/20">
                     <i class="fa-brands fa-whatsapp text-xl"></i> Enviar Pedido
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- MODAL DE INTELIGENCIA ARTIFICIAL (SUSHITO) -->
+    <div id="ai-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="bg-gray-900 w-full max-w-sm rounded-2xl shadow-2xl border border-gray-700 overflow-hidden flex flex-col h-[500px] animate-fade-in relative">
+            <!-- Glow Effect -->
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-blue-500 shadow-[0_0_20px_5px_rgba(59,130,246,0.5)]"></div>
+            
+            <!-- Header IA -->
+            <div class="bg-gray-900 p-4 border-b border-gray-800 flex justify-between items-center relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-robot text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white text-sm">Sushito 🐡</h3>
+                        <p class="text-[10px] text-blue-300 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Analizando gustos...</p>
+                    </div>
+                </div>
+                <button onclick="toggleAI()" class="text-gray-400 hover:text-white transition bg-gray-800 p-1 rounded-full w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Chat Container -->
+            <div id="chat-container" class="flex-1 p-4 overflow-y-auto bg-gray-900/95 flex flex-col gap-2">
+                <!-- Mensajes dinámicos aquí -->
+            </div>
+
+            <!-- Footer (Simulado) -->
+            <div class="p-3 bg-gray-800 border-t border-gray-700 text-center text-[10px] text-gray-500">
+                Motor de recomendación neuronal v2.0
+            </div>
+        </div>
+    </div>
+
     <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl opacity-0 transition-all duration-300 pointer-events-none z-50 font-semibold flex items-center gap-2 translate-y-10">
-        <i class="fa-solid fa-check-circle"></i> <span id="toast-msg">Producto agregado</span>
+    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 border border-gray-700 text-white px-6 py-3 rounded-full shadow-2xl opacity-0 transition-all duration-300 pointer-events-none z-[60] font-semibold flex items-center gap-3 translate-y-10 min-w-max">
+        <div class="bg-green-500 rounded-full w-6 h-6 flex items-center justify-center text-xs text-black font-bold flex-shrink-0">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <span id="toast-msg">Producto agregado</span>
     </div>
 
     <!-- Javascript Logic -->
@@ -363,6 +572,10 @@
         // --- CONFIGURACIÓN DE LA TIENDA ---
         const STORE_COORDS = { lat: 20.648325, lng: -103.267706 };
         
+        // Horario de Atención (Formato 24h)
+        const OPEN_HOUR = 16; // 4 PM
+        const CLOSE_HOUR = 23; // 11 PM
+
         // Configuración de Tarifas
         const SHIPPING_FREE_THRESHOLD = 250; // Envío gratis si subtotal >= 250
         const SHIPPING_FREE_KM = 1.0; // Envío gratis si distancia <= 1km
@@ -370,43 +583,103 @@
 
         // Variables Globales
         let currentShippingCost = 0;
-        let userLocation = null; // Guardará {lat, lng, mapUrl}
+        let userLocation = null; 
         let distanceKm = 0;
-        let freeShippingReason = ""; // Para mostrar por qué es gratis
+        let freeShippingReason = "";
+        
+        // Variables IA
+        let idleTimer;
+        let idleWarningShown = false;
+        let originalTitle = document.title;
 
-        // --- DATOS DEL MENÚ ---
+        // --- MANEJO DE VISIBILIDAD DE PESTAÑA (IA) ---
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                document.title = "🍣 ¡Tu sushi te extraña!";
+            } else {
+                document.title = originalTitle;
+            }
+        });
+
+        // --- FUNCIÓN PARA VERIFICAR HORARIO ---
+        function isStoreOpen() {
+            const now = new Date();
+            const hours = now.getHours();
+            // Lunes a Domingo = Siempre es true el día, solo checamos hora
+            return hours >= OPEN_HOUR && hours < CLOSE_HOUR;
+        }
+
+        // --- NOTIFICACIONES TOAST (FUNCIÓN FALTANTE EN CÓDIGOS ANTERIORES) ---
+        function showToast(message, isAi = false) {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-msg');
+            const iconContainer = toast.querySelector('div');
+            
+            msgEl.innerText = message;
+            
+            if (isAi) {
+                toast.classList.add('border-blue-500');
+                iconContainer.className = "bg-blue-500 rounded-full w-6 h-6 flex items-center justify-center text-xs text-white font-bold flex-shrink-0 animate-pulse";
+                iconContainer.innerHTML = '<i class="fa-solid fa-robot"></i>';
+            } else {
+                toast.classList.remove('border-blue-500');
+                iconContainer.className = "bg-green-500 rounded-full w-6 h-6 flex items-center justify-center text-xs text-black font-bold flex-shrink-0";
+                iconContainer.innerHTML = '<i class="fa-solid fa-check"></i>';
+            }
+
+            toast.style.opacity = '1';
+            toast.style.transform = 'translate(-50%, 0)';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, 40px)';
+            }, 3000);
+        }
+
+        // --- RESETEAR TIMER DE INACTIVIDAD ---
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            if (!idleWarningShown) {
+                idleTimer = setTimeout(() => {
+                    showToast("🤖 ¿Indeciso? ¡Sushito 🐡 está aquí para ayudar!", true);
+                    idleWarningShown = true;
+                }, 15000); 
+            }
+        }
+
+        // --- DATOS DEL MENÚ (TAGS ENRIQUECIDOS PARA SCORING) ---
         const proteinasEstandar = ["Camarón", "Pollo", "Surimi"];
         const proteinasLimitadas = ["Pollo", "Camarón"]; 
         const defaultImage = "defaul.jpg";
 
+        // Tags: heavy, light, crunchy, fresh, spicy, sweet, cheese, meat, share, promo
         const menuPromos = [
-            { id: "promo1", name: "Promo 2 Clásicos", description: "Selecciona tus 2 rollos favoritos (Ajonjolí o Empanizado).", originalPrice: 150, price: 100, image: defaultImage, proteins: [] },
-            { id: "promo2", name: "Promo Empa & Bocados", description: "2 Rollos Empanizados + 1 Orden de Bocados de Arroz.", originalPrice: 255, price: 170, image: "empanizado.jpeg", proteins: [] }
+            { id: "promo1", name: "Promo 2 Clásicos", description: "Selecciona tus 2 rollos favoritos (Ajonjolí o Empanizado).", originalPrice: 150, price: 100, image: defaultImage, proteins: [], tags: ['promo', 'share', 'heavy', 'light'] },
+            { id: "promo2", name: "Promo Empa & Bocados", description: "2 Rollos Empanizados + 1 Orden de Bocados de Arroz.", originalPrice: 255, price: 170, image: "empanizado.jpeg", proteins: [], tags: ['promo', 'crunchy', 'share', 'heavy'] }
         ];
 
         const menuEspeciales = [
-            { id: "esp1", name: "Mata Hambre", description: "Rollo empanizado con queso gratinado y topping de tocino crocante.", originalPrice: 110, price: 80, image: "mata.jpeg", proteins: proteinasEstandar },
-            { id: "esp2", name: "Nachito Roll", description: "Rollo empanizado con queso amarillo y rodajas de chile jalapeño.", originalPrice: 110, price: 80, image: "nachito.jpeg", proteins: proteinasEstandar },
-            { id: "esp3", name: "Chipotle Roll", description: "Rollo empanizado con aderezo chipotle.", originalPrice: 110, price: 80, image: defaultImage, proteins: proteinasEstandar },
-            { id: "esp4", name: "Empanizado Coronado", description: "Rollo empanizado con topping de surimi.", originalPrice: 110, price: 80, image: defaultImage, proteins: proteinasEstandar },
-            { id: "esp5", name: "Queso Roll", description: "Rollo empanizado con queso gratinado.", originalPrice: 110, price: 80, image: "queso.jpeg", proteins: proteinasEstandar },
-            { id: "esp6", name: "Macho Roll", description: "Rollo forrado de plátano frito.", originalPrice: 110, price: 80, image: "machito.jpeg", proteins: proteinasEstandar }
+            { id: "esp1", name: "Mata Hambre", description: "Rollo empanizado con queso gratinado y topping de tocino crocante.", originalPrice: 110, price: 80, image: "mata.jpeg", proteins: proteinasEstandar, tags: ['crunchy', 'heavy', 'cheese', 'meat'] },
+            { id: "esp2", name: "Nachito Roll", description: "Rollo empanizado con queso amarillo y rodajas de chile jalapeño.", originalPrice: 110, price: 80, image: "nachito.jpeg", proteins: proteinasEstandar, tags: ['crunchy', 'spicy', 'heavy', 'cheese'] },
+            { id: "esp3", name: "Chipotle Roll", description: "Rollo empanizado con aderezo chipotle.", originalPrice: 110, price: 80, image: defaultImage, proteins: proteinasEstandar, tags: ['crunchy', 'spicy', 'heavy'] },
+            { id: "esp4", name: "Empanizado Coronado", description: "Rollo empanizado con topping de surimi.", originalPrice: 110, price: 80, image: defaultImage, proteins: proteinasEstandar, tags: ['crunchy', 'heavy', 'seafood'] },
+            { id: "esp5", name: "Queso Roll", description: "Rollo empanizado con queso gratinado.", originalPrice: 110, price: 80, image: "queso.jpeg", proteins: proteinasEstandar, tags: ['crunchy', 'cheese', 'heavy'] },
+            { id: "esp6", name: "Macho Roll", description: "Rollo forrado de plátano frito.", originalPrice: 110, price: 80, image: "machito.jpeg", proteins: proteinasEstandar, tags: ['crunchy', 'sweet', 'heavy'] }
         ];
 
         const menuClasicos = [
-            { id: "cls1", name: "Ajonjolí", description: "Rollo cubierto de ajonjolí.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
-            { id: "cls2", name: "Philadelphia Empanizado", description: "Queso crema dentro y fuera.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
-            { id: "cls3", name: "Aguacatito", description: "Rollo forrado de aguacate.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
-            { id: "cls4", name: "Empanizado Tradicional", description: "Crujiente y delicioso.", originalPrice: 90, price: 70, image: "empanizado.jpeg", proteins: proteinasEstandar },
-            { id: "cls5", name: "Philadelphia (Natural)", description: "Queso crema por fuera.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
-            { id: "cls6", name: "California", description: "Rollo con alga por fuera.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar }
+            { id: "cls1", name: "Ajonjolí", description: "Rollo cubierto de ajonjolí.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar, tags: ['fresh', 'light', 'classic'] },
+            { id: "cls2", name: "Philadelphia Empanizado", description: "Queso crema dentro y fuera.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar, tags: ['crunchy', 'heavy', 'cheese'] },
+            { id: "cls3", name: "Aguacatito", description: "Rollo forrado de aguacate.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar, tags: ['fresh', 'light', 'classic', 'avocado'] },
+            { id: "cls4", name: "Empanizado Tradicional", description: "Crujiente y delicioso.", originalPrice: 90, price: 70, image: "empanizado.jpeg", proteins: proteinasEstandar, tags: ['crunchy', 'heavy', 'classic'] },
+            { id: "cls5", name: "Philadelphia (Natural)", description: "Queso crema por fuera.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar, tags: ['fresh', 'light', 'cheese'] },
+            { id: "cls6", name: "California", description: "Rollo con alga por fuera.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar, tags: ['fresh', 'light', 'classic'] }
         ];
 
         const menuExtras = [
-            { id: "rice1", name: "Yakimeshi Sencillo", description: "Arroz frito vegetales.", originalPrice: 70, price: 50, image: "sen.jpeg", proteins: ["Vegetales"] },
-            { id: "rice2", name: "Yakimeshi Proteína", description: "Arroz frito pollo o camarón.", originalPrice: 85, price: 60, image: "a.jpeg", proteins: proteinasLimitadas },
-            { id: "rice3", name: "Arroz Culichi", description: "Arroz frito, aguacate, philadelphia.", originalPrice: 100, price: 70, image: "culichi.jpeg", proteins: proteinasLimitadas },
-            { id: "app1", name: "Bocados de Arroz", description: "4 Bolitas empanizadas con queso.", originalPrice: 65, price: 55, image: "bolitas.png", proteins: ["Queso"] }
+            { id: "rice1", name: "Yakimeshi Sencillo", description: "Arroz frito vegetales.", originalPrice: 70, price: 50, image: "sen.jpeg", proteins: ["Vegetales"], tags: ['side'] },
+            { id: "rice2", name: "Yakimeshi Proteína", description: "Arroz frito pollo o camarón.", originalPrice: 85, price: 60, image: "a.jpeg", proteins: proteinasLimitadas, tags: ['side', 'heavy'] },
+            { id: "rice3", name: "Arroz Culichi", description: "Arroz frito, aguacate, philadelphia.", originalPrice: 100, price: 70, image: "culichi.jpeg", proteins: proteinasLimitadas, tags: ['side', 'fresh', 'cheese'] },
+            { id: "app1", name: "Bocados de Arroz", description: "4 Bolitas empanizadas con queso.", originalPrice: 65, price: 55, image: "bolitas.png", proteins: ["Queso"], tags: ['side', 'crunchy', 'cheese', 'snack'] }
         ];
 
         const allItems = [...menuPromos, ...menuEspeciales, ...menuClasicos, ...menuExtras];
@@ -417,89 +690,351 @@
         let cart = [];
         let isCheckoutMode = false;
 
+        // --- FILTROS INTELIGENTES ---
+        function applyAIFilter(filterType) {
+            const btns = document.querySelectorAll('.ai-filter-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            // Usamos event.currentTarget para mayor seguridad si el click es en un hijo
+            if(event && event.currentTarget) event.currentTarget.classList.add('active'); 
+
+            const lists = [
+                { id: 'grid-promos', items: menuPromos },
+                { id: 'grid-especiales', items: menuEspeciales },
+                { id: 'grid-clasicos', items: menuClasicos },
+                { id: 'grid-extras', items: menuExtras }
+            ];
+
+            let hasResults = false;
+
+            lists.forEach(group => {
+                const container = document.getElementById(group.id);
+                let filteredItems = group.items;
+
+                if (filterType !== 'all') {
+                    // Mapa de filtros simples para la barra superior
+                    filteredItems = group.items.filter(item => {
+                        if(filterType === 'promo') return item.tags.includes('promo');
+                        if(filterType === 'spicy') return item.tags.includes('spicy');
+                        if(filterType === 'crunchy') return item.tags.includes('crunchy') || item.tags.includes('heavy');
+                        if(filterType === 'fresh') return item.tags.includes('fresh') || item.tags.includes('light');
+                        return true;
+                    });
+                }
+
+                container.innerHTML = filteredItems.map(item => createCard(item, item.tags && item.tags.includes('promo'))).join('');
+                
+                const parentCat = container.closest('.menu-category');
+                if (filteredItems.length > 0) {
+                    parentCat.classList.remove('hidden');
+                    hasResults = true;
+                } else {
+                    parentCat.classList.add('hidden');
+                }
+            });
+
+            const noResults = document.getElementById('no-results');
+            if (!hasResults) {
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+            }
+        }
+
+        // --- LÓGICA DE INTELIGENCIA ARTIFICIAL (Sushito 2.0) ---
+        let aiScores = {}; // Puntuación para cada ítem
+
+        function toggleAI() {
+            const modal = document.getElementById('ai-modal');
+            const body = document.body;
+            modal.classList.toggle('active');
+            
+            if (modal.classList.contains('active')) {
+                body.classList.add('modal-open');
+                startAIChat();
+            } else {
+                body.classList.remove('modal-open');
+            }
+        }
+
+        function showTypingIndicator() {
+            const container = document.getElementById('chat-container');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typing-dots';
+            typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            container.appendChild(typingDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const el = document.getElementById('typing-dots');
+            if(el) el.remove();
+        }
+
+        function startAIChat() {
+            aiScores = {}; 
+            // Inicializar scores en 0
+            allItems.forEach(item => aiScores[item.id] = 0);
+
+            const container = document.getElementById('chat-container');
+            container.innerHTML = ''; 
+            
+            showTypingIndicator();
+            setTimeout(() => {
+                removeTypingIndicator();
+                addBotMessage("¡Konnichiwa! 🐡 Soy <strong>Sushito</strong>. Voy a escanear tus antojos para encontrar tu rollo ideal.");
+                setTimeout(() => {
+                    addBotMessage("Primero, ¿cuál es tu misión de hoy?");
+                    addOptions([
+                        { text: "Tengo mucha hambre (Atascarme) 🐗", action: "ratePreference(['heavy', 'crunchy', 'meat'], 5); askFlavor();" },
+                        { text: "Algo tranqui / Fit 🥗", action: "ratePreference(['light', 'fresh', 'avocado'], 5); askFlavor();" },
+                        { text: "Cuidar la cartera 💸", action: "ratePreference(['promo'], 10); findRecommendation();" }, // Shortcut
+                        { text: "Compartir con amigos 👯", action: "ratePreference(['share', 'snack'], 5); askFlavor();" }
+                    ]);
+                }, 600);
+            }, 800);
+        }
+
+        function askFlavor() {
+            showTypingIndicator();
+            setTimeout(() => {
+                removeTypingIndicator();
+                addBotMessage("Entendido. Ahora, ¿qué perfil de sabor busca tu paladar?");
+                addOptions([
+                    { text: "Amante del Queso Crema 🧀", action: "ratePreference(['cheese'], 5); askIngredient();" },
+                    { text: "Picante y rudo 🔥", action: "ratePreference(['spicy'], 6); askIngredient();" },
+                    { text: "Dulce / Exótico 🍌", action: "ratePreference(['sweet', 'fruit'], 6); findRecommendation();" },
+                    { text: "Clásico y confiable 🎌", action: "ratePreference(['classic'], 4); findRecommendation();" }
+                ]);
+            }, 800);
+        }
+
+        function askIngredient() {
+            showTypingIndicator();
+            setTimeout(() => {
+                removeTypingIndicator();
+                addBotMessage("Último dato para mi algoritmo... ¿Algún ingrediente clave?");
+                addOptions([
+                    { text: "Camarón 🍤", action: "filterByProtein('Camarón'); findRecommendation();" },
+                    { text: "Pollo 🍗", action: "filterByProtein('Pollo'); findRecommendation();" },
+                    { text: "Surimi 🦀", action: "filterByProtein('Surimi'); findRecommendation();" },
+                    { text: "Me da igual 🤷‍♂️", action: "findRecommendation();" }
+                ]);
+            }, 800);
+        }
+
+        // Funciones del Motor de IA
+        function ratePreference(tags, points) {
+            allItems.forEach(item => {
+                if (item.tags) {
+                    tags.forEach(t => {
+                        if (item.tags.includes(t)) {
+                            aiScores[item.id] += points;
+                        }
+                    });
+                }
+            });
+        }
+
+        function filterByProtein(protein) {
+            allItems.forEach(item => {
+                // Si tiene proteinas definidas y NO incluye la deseada, penalizar fuerte
+                if (item.proteins && item.proteins.length > 0 && !item.proteins.includes(protein)) {
+                    aiScores[item.id] -= 10; 
+                } else if (item.proteins && item.proteins.includes(protein)) {
+                    aiScores[item.id] += 3; // Bonus
+                }
+            });
+        }
+
+        function findRecommendation() {
+            showTypingIndicator();
+            setTimeout(() => {
+                removeTypingIndicator();
+                
+                // Encontrar ganador
+                let winner = null;
+                let maxScore = -999;
+
+                allItems.forEach(item => {
+                    if (aiScores[item.id] > maxScore) {
+                        maxScore = aiScores[item.id];
+                        winner = item;
+                    }
+                });
+
+                // Calcular % de match (simulado para efecto visual)
+                let matchPercent = Math.min(99, 75 + Math.floor(Math.random() * 24)); 
+                if (maxScore > 10) matchPercent = 98;
+                if (maxScore < 2) matchPercent = 65;
+
+                addBotMessage(`¡Procesamiento completo! 🧠⚡`);
+                showResult(winner, matchPercent);
+            }, 1200);
+        }
+
+        function showResult(item, percent) {
+            const container = document.getElementById('chat-container');
+            
+            // Crear tarjeta de resultado
+            const cardHtml = `
+                <div class="mt-2 bg-gray-800 rounded-lg p-4 border border-blue-500 shadow-lg animate-fade-in relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">
+                        ${percent}% MATCH
+                    </div>
+                    <img src="${item.image}" class="w-full h-36 object-cover rounded mb-3 border border-gray-700">
+                    <h4 class="font-bold text-white text-lg leading-tight mb-1">${item.name}</h4>
+                    <p class="text-gray-400 text-xs mb-3 leading-relaxed">${item.description}</p>
+                    
+                    <div class="flex justify-between items-center mt-2 pt-2 border-t border-gray-700">
+                        <span class="text-red-500 font-bold text-xl">$${item.price}</span>
+                        <button onclick="addToCartFromAI('${item.id}')" class="bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded-full text-xs font-bold transition shadow-lg transform hover:scale-105 flex items-center gap-1">
+                            <i class="fa-solid fa-cart-plus"></i> ¡Lo quiero!
+                        </button>
+                    </div>
+                </div>
+                <div class="text-center mt-6">
+                    <button onclick="startAIChat()" class="text-gray-500 text-xs hover:text-white underline transition">🔄 Reiniciar búsqueda</button>
+                </div>
+            `;
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.innerHTML = cardHtml;
+            container.appendChild(resultDiv);
+            container.scrollTop = container.scrollHeight;
+            
+            // Confeti pequeño al encontrar resultado
+            try {
+                var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
+                confetti(Object.assign({}, defaults, { particleCount: 40, origin: { x: 0.5, y: 0.5 } }));
+            } catch(e){}
+        }
+
+        function addBotMessage(text) {
+            const container = document.getElementById('chat-container');
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble bot';
+            bubble.innerHTML = text;
+            container.appendChild(bubble);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addUserMessage(text) {
+            const container = document.getElementById('chat-container');
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble user';
+            bubble.innerText = text;
+            container.appendChild(bubble);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addOptions(options) {
+            const container = document.getElementById('chat-container');
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'chat-options';
+            
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'chat-option-btn';
+                btn.innerText = opt.text;
+                btn.onclick = () => {
+                    // Deshabilitar botones anteriores
+                    const allBtns = document.querySelectorAll('.chat-option-btn');
+                    allBtns.forEach(b => { b.disabled = true; b.style.opacity = 0.5; });
+                    optionsDiv.remove(); 
+                    
+                    addUserMessage(opt.text);
+                    eval(opt.action);
+                };
+                optionsDiv.appendChild(btn);
+            });
+            container.appendChild(optionsDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addToCartFromAI(id) {
+            toggleAI(); // Cerrar modal
+            addToCart(id); // Agregar al carrito usando la función principal
+        }
+
         // --- FUNCIONES DE GEOLOCALIZACIÓN Y DISTANCIA ---
 
-        function calculateShipping() {
+        function calculateShipping(isManual = false) {
+            const cashRadio = document.getElementById('opt-cash'); 
             const btn = document.getElementById('btn-location');
             const resultDiv = document.getElementById('location-result');
-            const cashRadio = document.getElementById('opt-cash'); // Referencia al botón de efectivo
             
-            if (!navigator.geolocation) {
-                alert("Tu navegador no soporta geolocalización.");
-                return;
+            if (!navigator.geolocation) return;
+
+            // UI Feedback inicial (Muestra que está trabajando si es manual, o silencioso)
+            if(isManual && btn) {
+                btn.innerHTML = `<i class="fa-solid fa-spinner loading-spin"></i> Localizando...`;
+                btn.disabled = true;
             }
 
-            btn.innerHTML = `<i class="fa-solid fa-spinner loading-spin"></i> Localizando...`;
-            btn.disabled = true;
+            const onSuccess = (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const dist = getDistanceFromLatLonInKm(STORE_COORDS.lat, STORE_COORDS.lng, lat, lng);
+                distanceKm = parseFloat(dist.toFixed(2));
+                userLocation = { lat: lat, lng: lng };
 
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    
-                    // Calcular Distancia
-                    const dist = getDistanceFromLatLonInKm(STORE_COORDS.lat, STORE_COORDS.lng, lat, lng);
-                    distanceKm = parseFloat(dist.toFixed(2));
-                    
-                    // Guardar datos
-                    userLocation = {
-                        lat: lat,
-                        lng: lng,
-                        mapUrl: `https://www.google.com/maps?q=${lat},${lng}`
-                    };
-
-                    resultDiv.classList.remove('hidden');
-                    
-                    // Mostrar resultados en UI
-                    resultDiv.innerHTML = `
-                        <p class="text-green-400 font-bold"><i class="fa-solid fa-check-circle"></i> Ubicación detectada</p>
-                        <p class="text-gray-300">Distancia: <span class="font-mono text-white">${distanceKm} km</span></p>
-                    `;
-                    document.getElementById('customer-address').placeholder = "Ubicación GPS guardada. Añade detalles (número, color casa) aquí...";
-
-                    // LOGICA DE PAGOS: Habilitar efectivo si está cerca
-                    if (distanceKm <= 1.0) {
+                if (distanceKm <= 1.0) {
+                    if(cashRadio) {
                         cashRadio.classList.remove('hidden');
                         cashRadio.classList.add('flex');
-                    } else {
+                    }
+                } else {
+                    if(cashRadio) {
                         cashRadio.classList.add('hidden');
                         cashRadio.classList.remove('flex');
-                        // Si estaba seleccionado efectivo, regresar a transferencia
-                        const transferRadio = document.querySelector('input[value="transferencia"]');
-                        if (transferRadio) {
-                            transferRadio.checked = true;
-                            togglePaymentMethod();
-                        }
                     }
+                    const transferRadio = document.querySelector('input[value="transferencia"]');
+                    if (transferRadio) {
+                        transferRadio.checked = true;
+                        togglePaymentMethod();
+                    }
+                }
+                
+                // Si hay elementos de UI de ubicación (del código antiguo o futuro), actualizarlos
+                if (resultDiv) {
+                    resultDiv.classList.remove('hidden');
+                    resultDiv.innerHTML = `<p class="text-green-400 font-bold"><i class="fa-solid fa-check-circle"></i> Ubicación detectada (${distanceKm} km)</p>`;
+                }
+                if(btn) {
+                    btn.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Recalcular`;
+                    btn.disabled = false;
+                }
 
-                    btn.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Recalcular Ubicación`;
-                    btn.disabled = false;
-                    btn.classList.replace('bg-blue-600', 'bg-gray-600');
-                    
-                    // IMPORTANTE: Recalcular totales ahora que tenemos distancia
-                    updateCartUI(); 
-                },
-                (error) => {
-                    console.error(error);
-                    btn.innerHTML = `<i class="fa-solid fa-location-dot"></i> Reintentar GPS`;
-                    btn.disabled = false;
-                    let msg = "Error al obtener ubicación.";
-                    if(error.code == 1) msg = "Permiso de ubicación denegado.";
-                    alert(msg + " Por favor ingresa tu dirección manualmente.");
-                    
-                    // En caso de error, aseguramos que efectivo esté oculto (por seguridad)
-                    cashRadio.classList.add('hidden');
-                    cashRadio.classList.remove('flex');
-                },
-                { enableHighAccuracy: true }
-            );
+                updateCartUI(); 
+            };
+
+            const onErrorHighAcc = (error) => {
+                console.warn("Fallo GPS Satelital, intentando modo baja precisión...", error);
+                navigator.geolocation.getCurrentPosition(
+                    onSuccess, 
+                    (e)=>{
+                        console.error("Fallo total ubicación", e);
+                        if(cashRadio) {
+                            cashRadio.classList.add('hidden');
+                            cashRadio.classList.remove('flex');
+                        }
+                        if(btn) {
+                            btn.innerHTML = `<i class="fa-solid fa-location-dot"></i> Reintentar`;
+                            btn.disabled = false;
+                        }
+                    }, 
+                    { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
+                );
+            };
+
+            navigator.geolocation.getCurrentPosition(onSuccess, onErrorHighAcc, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
         }
 
         function togglePaymentMethod() {
             const method = document.querySelector('input[name="payment-method"]:checked').value;
             const cashOptions = document.getElementById('cash-options');
             const transferOptions = document.getElementById('transfer-options');
-
             if (method === 'efectivo') {
                 cashOptions.classList.remove('hidden');
                 transferOptions.classList.add('hidden');
@@ -509,103 +1044,45 @@
             }
         }
 
-        // Fórmula de Haversine
         function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radio de la tierra en km
+            const R = 6371; 
             const dLat = deg2rad(lat2 - lat1);
             const dLon = deg2rad(lon2 - lon1);
-            const a =
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            const d = R * c; // Distancia en km
-            return d;
+            return R * c; 
         }
-
-        function deg2rad(deg) {
-            return deg * (Math.PI/180);
-        }
+        function deg2rad(deg) { return deg * (Math.PI/180); }
 
         // --- Renderizado del Menú ---
+        function getRandomTag() {
+            const tags = [{text: "🔥 Tendencia", icon: "fa-fire"}, {text: "⚡ Rápido", icon: "fa-bolt"}, {text: "❤️ Favorito", icon: "fa-heart"}, {text: "🌟 Top Ventas", icon: "fa-star"}];
+            if (Math.random() > 0.7) {
+                const tag = tags[Math.floor(Math.random() * tags.length)];
+                return `<div class="badge-ai"><i class="fa-solid ${tag.icon}"></i> ${tag.text}</div>`;
+            }
+            return "";
+        }
+
         function createCard(item, isOffer) {
             const offerBadge = isOffer ? `<div class="badge-offer">Oferta</div>` : '';
+            const aiBadge = !isOffer ? getRandomTag() : ''; 
+            const open = isStoreOpen(); 
+            const btnClass = open ? "bg-red-600 hover:bg-red-700 shadow-lg active:scale-95" : "bg-gray-600 cursor-not-allowed opacity-75";
+            const btnText = open ? `<i class="fa-solid fa-plus"></i> Agregar` : `<i class="fa-solid fa-clock"></i> Cerrado`;
+            const btnAction = open ? `onclick="addToCart('${item.id}')"` : "disabled";
+            
             let selectorHTML = '';
-
             if (item.id === 'promo1') {
-                selectorHTML = `
-                    <div class="bg-gray-700/50 p-2 rounded mb-2 border border-gray-600">
-                        <div class="mb-2">
-                            <label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Rollo 1</label>
-                            <select id="promo1-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">
-                                ${promo1Options}
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Rollo 2</label>
-                            <select id="promo2-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">
-                                ${promo1Options}
-                            </select>
-                        </div>
-                    </div>
-                `;
+                selectorHTML = `<div class="bg-gray-700/50 p-2 rounded mb-2 border border-gray-600"><div class="mb-2"><label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Rollo 1</label><select id="promo1-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">${promo1Options}</select></div><div><label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Rollo 2</label><select id="promo2-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">${promo1Options}</select></div></div>`;
             } else if (item.id === 'promo2') {
-                selectorHTML = `
-                    <div class="bg-gray-700/50 p-2 rounded mb-2 border border-gray-600">
-                        <div class="mb-2">
-                            <label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Proteína Empanizado 1</label>
-                            <select id="promo2-p1-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">
-                                ${proteinOptionsForPromo2}
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Proteína Empanizado 2</label>
-                            <select id="promo2-p2-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">
-                                ${proteinOptionsForPromo2}
-                            </select>
-                        </div>
-                        <div class="mt-1 text-[10px] text-yellow-500 font-medium text-center italic"><i class="fa-solid fa-plus"></i> Bocados de Arroz incluido</div>
-                    </div>
-                `;
+                selectorHTML = `<div class="bg-gray-700/50 p-2 rounded mb-2 border border-gray-600"><div class="mb-2"><label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Proteína Empanizado 1</label><select id="promo2-p1-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">${proteinOptionsForPromo2}</select></div><div><label class="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Proteína Empanizado 2</label><select id="promo2-p2-${item.id}" class="w-full bg-white text-xs text-black rounded p-1 focus:outline-none font-medium">${proteinOptionsForPromo2}</select></div><div class="mt-1 text-[10px] text-yellow-500 font-medium text-center italic"><i class="fa-solid fa-plus"></i> Bocados de Arroz incluido</div></div>`;
             } else {
-                const proteinOptions = item.proteins.map(p => `<option value="${p}">${p}</option>`).join('');
-                selectorHTML = `
-                    <div class="flex items-center gap-2 mb-2">
-                         <i class="fa-solid fa-utensils text-gray-500 text-xs"></i>
-                         <select id="protein-${item.id}" class="w-full bg-white text-sm text-black rounded p-1 focus:outline-none border border-gray-600">
-                            ${proteinOptions}
-                        </select>
-                    </div>
-                `;
+                const proteinOptions = item.proteins ? item.proteins.map(p => `<option value="${p}">${p}</option>`).join('') : '';
+                selectorHTML = `<div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-utensils text-gray-500 text-xs"></i><select id="protein-${item.id}" class="w-full bg-white text-sm text-black rounded p-1 focus:outline-none border border-gray-600">${proteinOptions}</select></div>`;
             }
             
-            return `
-            <div class="bg-gray-800 rounded-xl overflow-hidden sushi-card flex flex-col h-full border border-gray-700 shadow-lg relative group">
-                ${offerBadge}
-                <div class="h-48 md:h-56 lg:h-64 overflow-hidden relative">
-                    <div class="sushi-image-wrapper absolute inset-0">
-                        <img src="${item.image}" alt="${item.name}" class="transition transform group-hover:scale-105">
-                    </div>
-                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent h-20 opacity-90"></div>
-                    
-                    <div class="absolute bottom-2 right-2 flex flex-col items-end">
-                        <span class="text-xs text-gray-300 line-through font-semibold bg-black/50 px-1 rounded">$${item.originalPrice}</span>
-                        <span class="bg-red-600 text-white px-3 py-0.5 rounded-lg font-bold shadow-lg text-lg">$${item.price}</span>
-                    </div>
-                </div>
-                <div class="p-4 flex-1 flex flex-col">
-                    <h3 class="font-bold text-xl mb-1 text-white">${item.name}</h3>
-                    <p class="text-gray-400 text-xs mb-3 flex-1 leading-relaxed">${item.description}</p>
-                    
-                    <div class="mt-auto bg-gray-900/50 p-2 rounded-lg border border-gray-700">
-                        ${selectorHTML}
-                        <button onclick="addToCart('${item.id}')" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition duration-300 flex items-center justify-center gap-2 shadow-lg active:scale-95 text-sm">
-                            <i class="fa-solid fa-plus"></i> Agregar
-                        </button>
-                    </div>
-                </div>
-            </div>
-            `;
+            return `<div class="bg-gray-800 rounded-xl overflow-hidden sushi-card flex flex-col h-full border border-gray-700 shadow-lg relative group">${offerBadge}${aiBadge}<div class="h-48 md:h-56 lg:h-64 overflow-hidden relative"><div class="sushi-image-wrapper absolute inset-0"><img src="${item.image}" alt="${item.name}" class="transition transform group-hover:scale-105"></div><div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent h-20 opacity-90"></div><div class="absolute bottom-2 right-2 flex flex-col items-end"><span class="text-xs text-gray-300 line-through font-semibold bg-black/50 px-1 rounded">$${item.originalPrice}</span><span class="bg-red-600 text-white px-3 py-0.5 rounded-lg font-bold shadow-lg text-lg">$${item.price}</span></div></div><div class="p-4 flex-1 flex flex-col"><h3 class="font-bold text-xl mb-1 text-white">${item.name}</h3><p class="text-gray-400 text-xs mb-3 flex-1 leading-relaxed">${item.description}</p><div class="mt-auto bg-gray-900/50 p-2 rounded-lg border border-gray-700">${selectorHTML}<button ${btnAction} class="w-full ${btnClass} text-white font-semibold py-2 rounded transition duration-300 flex items-center justify-center gap-2 text-sm">${btnText}</button></div></div></div>`;
         }
 
         function renderMenu() {
@@ -617,10 +1094,26 @@
 
         // --- Funciones del Carrito ---
 
+        // Función para abrir/cerrar el carrito
+        function toggleCart() {
+            if(!isStoreOpen()) {
+                alert("Restaurante cerrado. Horario: 4:00 PM a 11:00 PM.");
+                return;
+            }
+            const modal = document.getElementById('cart-modal');
+            const body = document.body;
+            modal.classList.toggle('active');
+            if (modal.classList.contains('active')) {
+                body.classList.add('modal-open');
+            } else {
+                body.classList.remove('modal-open');
+            }
+        }
+
         function addToCart(id) {
+            if(!isStoreOpen()) { alert("Restaurante cerrado. Horario: 4:00 PM a 11:00 PM."); return; }
             const item = allItems.find(i => i.id === id);
             let selectedVariant = "";
-
             if (id === 'promo1') {
                 const r1 = document.getElementById(`promo1-${id}`).value;
                 const r2 = document.getElementById(`promo2-${id}`).value;
@@ -633,51 +1126,23 @@
                 const proteinSelect = document.getElementById(`protein-${id}`);
                 selectedVariant = proteinSelect.value;
             }
-
             const cartItemId = `${id}-${selectedVariant}`;
             const existingItem = cart.find(i => i.cartId === cartItemId);
-
-            if (existingItem) {
-                existingItem.quantity++;
-            } else {
-                cart.push({
-                    cartId: cartItemId,
-                    originalId: id,
-                    name: item.name,
-                    price: item.price,
-                    protein: selectedVariant,
-                    image: item.image,
-                    quantity: 1,
-                    note: "" 
-                });
+            if (existingItem) { existingItem.quantity++; } else {
+                cart.push({ cartId: cartItemId, originalId: id, name: item.name, price: item.price, protein: selectedVariant, image: item.image, quantity: 1, note: "" });
             }
-            updateCartUI();
-            showToast(`${item.name} agregado`);
+            try { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); } catch(e) {}
+            updateCartUI(); 
+            showToast(`${item.name} agregado`); 
+            resetIdleTimer();
         }
 
-        function removeFromCart(cartId) {
-            cart = cart.filter(item => item.cartId !== cartId);
-            updateCartUI();
-        }
-
+        function removeFromCart(cartId) { cart = cart.filter(item => item.cartId !== cartId); updateCartUI(); }
         function updateQuantity(cartId, change) {
             const item = cart.find(i => i.cartId === cartId);
-            if (item) {
-                item.quantity += change;
-                if (item.quantity <= 0) {
-                    removeFromCart(cartId);
-                } else {
-                    updateCartUI();
-                }
-            }
+            if (item) { item.quantity += change; if (item.quantity <= 0) { removeFromCart(cartId); } else { updateCartUI(); } }
         }
-
-        function updateItemNote(cartId, text) {
-            const item = cart.find(i => i.cartId === cartId);
-            if (item) {
-                item.note = text;
-            }
-        }
+        function updateItemNote(cartId, text) { const item = cart.find(i => i.cartId === cartId); if (item) { item.note = text; } }
 
         function updateCartUI() {
             const container = document.getElementById('cart-items-container');
@@ -687,289 +1152,101 @@
             const countEl = document.getElementById('cart-count');
             const formSection = document.getElementById('checkout-form');
             const checkoutBtn = document.getElementById('checkout-btn');
-            
-            // Elementos de progreso
             const progressContainer = document.getElementById('free-shipping-progress');
             const progressBarFill = document.getElementById('progress-bar-fill');
             const progressText = document.getElementById('progress-text');
+            const aiSuggestionBox = document.getElementById('ai-suggestion-box');
 
             const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
             countEl.innerText = totalItems;
-            if(totalItems > 0) {
-                countEl.classList.add('scale-125');
-                setTimeout(() => countEl.classList.remove('scale-125'), 200);
-            }
+            if(totalItems > 0) { countEl.classList.add('scale-125'); setTimeout(() => countEl.classList.remove('scale-125'), 200); }
 
-            // --- CÁLCULOS DINÁMICOS DE COSTO ---
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            
-            // Verificamos si ya es gratis por distancia
             const isFreeByDistance = userLocation && distanceKm <= SHIPPING_FREE_KM;
 
-            // Barra de progreso
-            if (isFreeByDistance) {
-                // Si el envío ya es gratis por distancia, ocultamos la barra
-                progressContainer.classList.add('hidden');
-            } else if (subtotal > 0 && subtotal < SHIPPING_FREE_THRESHOLD) {
-                // Si no es gratis por distancia y falta para los 250
+            if (isFreeByDistance) { progressContainer.classList.add('hidden'); } else if (subtotal > 0 && subtotal < SHIPPING_FREE_THRESHOLD) {
                 progressContainer.classList.remove('hidden');
                 const percent = (subtotal / SHIPPING_FREE_THRESHOLD) * 100;
-                const missing = SHIPPING_FREE_THRESHOLD - subtotal;
                 progressBarFill.style.width = `${percent}%`;
-                progressText.innerText = `¡Te faltan $${missing.toFixed(2)} para envío gratis!`;
-                progressText.className = "text-[10px] text-green-400 text-right";
+                progressText.innerText = `¡Te faltan $${(SHIPPING_FREE_THRESHOLD - subtotal).toFixed(2)} para envío gratis!`;
             } else if (subtotal >= SHIPPING_FREE_THRESHOLD) {
                 progressContainer.classList.remove('hidden');
                 progressBarFill.style.width = `100%`;
                 progressText.innerText = `¡Felicidades! Tienes envío gratis.`;
-                progressText.className = "text-[10px] text-yellow-400 text-right";
-            } else {
-                progressContainer.classList.add('hidden');
-            }
+            } else { progressContainer.classList.add('hidden'); }
 
-            // Lógica de Envío
+            if (cart.length > 0) {
+                const hasBocados = cart.some(i => i.originalId === 'app1');
+                const hasRice = cart.some(i => i.name.includes('Yakimeshi') || i.name.includes('Arroz'));
+                const hasRoll = cart.some(i => !i.name.includes('Yakimeshi') && !i.name.includes('Arroz') && !i.name.includes('Bocados'));
+                let suggestion = null;
+                if (!hasBocados) { suggestion = { id: 'app1', text: '¡Completa tu orden con unos Bocados de Arroz!' }; } else if (hasRoll && !hasRice) { suggestion = { id: 'rice2', text: '¿Se te antoja un Yakimeshi para acompañar?' }; }
+                if (suggestion) { aiSuggestionBox.classList.remove('hidden'); document.getElementById('ai-suggestion-text').innerText = suggestion.text; document.getElementById('ai-suggestion-btn').onclick = () => addToCart(suggestion.id); } else { aiSuggestionBox.classList.add('hidden'); }
+            } else { aiSuggestionBox.classList.add('hidden'); }
+
             if (userLocation) {
-                if (subtotal >= SHIPPING_FREE_THRESHOLD) {
-                    currentShippingCost = 0;
-                    freeShippingReason = "Pedido > $250";
-                } else if (distanceKm <= SHIPPING_FREE_KM) {
-                    currentShippingCost = 0;
-                    freeShippingReason = "Distancia < 1km";
-                } else {
-                    // Cálculo: distancia * costo por km
-                    // Redondeamos hacia arriba para no perder centavos
-                    currentShippingCost = Math.ceil(distanceKm * SHIPPING_COST_PER_KM);
-                    freeShippingReason = "";
-                }
-            } else {
-                currentShippingCost = 0; // Se queda en 0 hasta calcular
-            }
+                if (subtotal >= SHIPPING_FREE_THRESHOLD) { currentShippingCost = 0; freeShippingReason = "Pedido > $250"; } else if (distanceKm <= SHIPPING_FREE_KM) { currentShippingCost = 0; freeShippingReason = "Distancia < 1km"; } else { currentShippingCost = Math.ceil(distanceKm * SHIPPING_COST_PER_KM); freeShippingReason = ""; }
+            } else { currentShippingCost = 0; }
 
             const total = subtotal + currentShippingCost;
-
             subtotalEl.innerText = `$${subtotal.toFixed(2)}`;
             totalEl.innerText = `$${total.toFixed(2)}`;
 
-            // UI del Texto de Envío
-            if (!userLocation) {
-                shippingEl.innerText = "Calculando...";
-                shippingEl.className = "text-yellow-500 font-bold text-sm italic";
-                if(subtotal > 0) shippingEl.innerText = "Calcula ubicación";
-            } else {
-                if (currentShippingCost === 0) {
-                    shippingEl.innerHTML = `GRATIS <span class="text-[10px] bg-green-700 px-1 rounded ml-1 font-normal">${freeShippingReason}</span>`;
-                    shippingEl.className = "text-green-400 font-bold";
-                } else {
-                    shippingEl.innerText = `$${currentShippingCost.toFixed(2)}`;
-                    shippingEl.className = "text-white font-bold";
-                }
-            }
+            if (!userLocation) { shippingEl.innerText = "Calculando..."; shippingEl.className = "text-yellow-500 font-bold text-sm italic"; } else { if (currentShippingCost === 0) { shippingEl.innerHTML = `GRATIS <span class="text-[10px] bg-green-700 px-1 rounded ml-1 font-normal">${freeShippingReason}</span>`; shippingEl.className = "text-green-400 font-bold"; } else { shippingEl.innerText = `$${currentShippingCost.toFixed(2)}`; shippingEl.className = "text-white font-bold"; } }
 
             if (cart.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center text-gray-500 mt-20 flex flex-col items-center">
-                        <i class="fa-solid fa-basket-shopping text-6xl mb-4 opacity-20"></i>
-                        <p class="text-lg font-medium">Carrito vacío</p>
-                        <button onclick="toggleCart()" class="mt-4 text-red-500 text-sm hover:text-red-400">Ver Menú</button>
-                    </div>`;
+                container.innerHTML = `<div class="text-center text-gray-500 mt-20 flex flex-col items-center"><i class="fa-solid fa-basket-shopping text-6xl mb-4 opacity-20"></i><p class="text-lg font-medium">Carrito vacío</p><button onclick="toggleCart()" class="mt-4 text-red-500 text-sm hover:text-red-400">Ver Menú</button></div>`;
                 formSection.classList.add('hidden');
                 checkoutBtn.innerHTML = `<span class="opacity-50">Carrito Vacío</span>`;
                 checkoutBtn.disabled = true;
                 checkoutBtn.classList.add('bg-gray-700', 'cursor-not-allowed');
                 checkoutBtn.classList.remove('bg-green-600', 'hover:bg-green-500');
                 isCheckoutMode = false;
-                
-                // Reset parcial
-                currentShippingCost = 0;
-                document.getElementById('location-result').classList.add('hidden');
-                document.getElementById('btn-location').classList.replace('bg-gray-600', 'bg-blue-600');
-                document.getElementById('btn-location').innerHTML = `<i class="fa-solid fa-location-dot"></i> 📍 Calcular Envío (GPS)`;
-                userLocation = null; // Reseteamos ubicación para obligar a recalcular si inician de cero? (Opcional, lo dejaremos para mejor UX si recargan)
-                // Ocultar opción efectivo al reiniciar
-                document.getElementById('opt-cash').classList.add('hidden');
-                document.getElementById('opt-cash').classList.remove('flex');
-                
             } else {
                 checkoutBtn.disabled = false;
                 checkoutBtn.classList.remove('bg-gray-700', 'cursor-not-allowed');
                 checkoutBtn.classList.add('bg-green-600', 'hover:bg-green-500');
-                
-                if (!isCheckoutMode) {
-                   checkoutBtn.innerHTML = `Continuar Compra <i class="fa-solid fa-arrow-right"></i>`;
-                }
-
-                container.innerHTML = cart.map(item => `
-                    <div class="bg-gray-800 p-3 rounded-lg shadow-sm mb-3 border border-gray-700 relative overflow-hidden group">
-                        <div class="flex items-center mb-2">
-                            <img src="${item.image}" class="w-14 h-14 rounded-md object-contain bg-gray-800 p-1 border border-gray-600" alt="${item.name}">
-                            <div class="flex-1 min-w-0">
-                                <h4 class="font-bold text-sm text-gray-200 truncate">${item.name}</h4>
-                                <p class="text-xs text-gray-400 mb-0.5 truncate">${item.protein}</p>
-                                <p class="text-red-500 font-bold text-sm">$${(item.price * item.quantity).toFixed(2)}</p>
-                            </div>
-                            <div class="flex items-center gap-2 bg-gray-900 rounded-lg p-1 border border-gray-700">
-                                <button onclick="updateQuantity('${item.cartId}', -1)" class="text-gray-400 hover:text-red-500 w-6 h-6 flex items-center justify-center transition"><i class="fa-solid fa-minus text-xs"></i></button>
-                                <span class="text-sm font-bold text-white w-4 text-center select-none">${item.quantity}</span>
-                                <button onclick="updateQuantity('${item.cartId}', 1)" class="text-gray-400 hover:text-green-500 w-6 h-6 flex items-center justify-center transition"><i class="fa-solid fa-plus text-xs"></i></button>
-                            </div>
-                        </div>
-                        <div class="border-t border-gray-700 pt-2">
-                            <input type="text" 
-                                placeholder="Nota: sin pepino, extra soya..." 
-                                value="${item.note || ''}"
-                                oninput="updateItemNote('${item.cartId}', this.value)"
-                                class="w-full bg-gray-900/50 text-xs text-gray-300 border border-gray-600 rounded px-2 py-1 focus:border-red-500 focus:outline-none placeholder-gray-600">
-                        </div>
-                    </div>
-                `).join('');
+                if (!isCheckoutMode) { checkoutBtn.innerHTML = `Continuar Compra <i class="fa-solid fa-arrow-right"></i>`; }
+                container.innerHTML = cart.map(item => `<div class="bg-gray-800 p-3 rounded-lg shadow-sm mb-3 border border-gray-700 relative overflow-hidden group"><div class="flex items-center mb-2"><img src="${item.image}" class="w-14 h-14 rounded-md object-contain bg-gray-800 p-1 border border-gray-600" alt="${item.name}"><div class="flex-1 min-w-0"><h4 class="font-bold text-sm text-gray-200 truncate">${item.name}</h4><p class="text-xs text-gray-400 mb-0.5 truncate">${item.protein}</p><p class="text-red-500 font-bold text-sm">$${(item.price * item.quantity).toFixed(2)}</p></div><div class="flex items-center gap-2 bg-gray-900 rounded-lg p-1 border border-gray-700"><button onclick="updateQuantity('${item.cartId}', -1)" class="text-gray-400 hover:text-red-500 w-6 h-6 flex items-center justify-center transition"><i class="fa-solid fa-minus text-xs"></i></button><span class="text-sm font-bold text-white w-4 text-center select-none">${item.quantity}</span><button onclick="updateQuantity('${item.cartId}', 1)" class="text-gray-400 hover:text-green-500 w-6 h-6 flex items-center justify-center transition"><i class="fa-solid fa-plus text-xs"></i></button></div></div><div class="border-t border-gray-700 pt-2"><input type="text" placeholder="Nota: sin pepino, extra soya..." value="${item.note || ''}" oninput="updateItemNote('${item.cartId}', this.value)" class="w-full bg-gray-900/50 text-xs text-gray-300 border border-gray-600 rounded px-2 py-1 focus:border-red-500 focus:outline-none placeholder-gray-600"></div></div>`).join('');
             }
-        }
-
-        // --- UI Interactions ---
-
-        function toggleCart() {
-            const modal = document.getElementById('cart-modal');
-            const body = document.body;
-            modal.classList.toggle('active');
-            if (modal.classList.contains('active')) {
-                body.classList.add('modal-open');
-            } else {
-                body.classList.remove('modal-open');
-            }
-        }
-
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            const msgEl = document.getElementById('toast-msg');
-            msgEl.innerText = message;
-            toast.style.opacity = '1';
-            toast.style.transform = 'translate(-50%, 0)';
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translate(-50%, 40px)';
-            }, 2000);
         }
 
         // --- Checkout Logic (WhatsApp) ---
-
-        function handleCheckout() {
-            const formSection = document.getElementById('checkout-form');
-            const checkoutBtn = document.getElementById('checkout-btn');
-            
-            if (!isCheckoutMode) {
-                formSection.classList.remove('hidden');
-                checkoutBtn.innerHTML = `<i class="fa-brands fa-whatsapp text-xl"></i> Confirmar Pedido`;
-                isCheckoutMode = true;
-                setTimeout(() => {
-                    const modalContent = document.querySelector('.cart-items');
-                    modalContent.scrollTop = modalContent.scrollHeight;
-                }, 100);
-                return;
-            }
-
-            const name = document.getElementById('customer-name').value.trim();
-            const phone = document.getElementById('customer-phone').value.trim();
-            const address = document.getElementById('customer-address').value.trim();
-            const addressDetails = document.getElementById('customer-address-details').value.trim();
-            const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
-            
-            if (!name || !phone) {
-                alert("Por favor escribe tu nombre y teléfono.");
-                return;
-            }
-
-            // Validar si usó GPS
-            if (userLocation) {
-                 if (!address && !addressDetails) {
-                     alert("Por favor agrega alguna referencia (color de casa, entre calles) para ayudar al repartidor.");
-                     return;
-                 }
-            } else {
-                if (!address) {
-                    alert("Por favor ingresa tu dirección o usa el botón de 'Calcular Envío'.");
-                    return;
-                }
-            }
-            
-            // Validaciones específicas de pago
-            let paymentDetailsMsg = "";
-            let changeAmount = 0;
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const total = subtotal + currentShippingCost;
-
-            if (paymentMethod === 'efectivo') {
-                const amountPay = parseFloat(document.getElementById('payment-amount').value);
-                if (!amountPay || isNaN(amountPay) || amountPay < total) {
-                    alert(`Por favor ingresa un monto válido para pagar (mínimo $${total.toFixed(2)}).`);
-                    return;
-                }
-                changeAmount = amountPay - total;
-                paymentDetailsMsg += `💵 *PAGO: EFECTIVO*\n`;
-                paymentDetailsMsg += `🔢 *Paga con:* $${amountPay.toFixed(2)}\n`;
-                paymentDetailsMsg += `🔄 *Cambio:* $${changeAmount.toFixed(2)}\n`;
-            } else {
-                paymentDetailsMsg += `💳 *PAGO: TRANSFERENCIA*\n`;
-                paymentDetailsMsg += `📎 _(Adjunto comprobante a continuación)_`;
-            }
-
-            // --- FORMATO DE MENSAJE PROFESIONAL ---
-            let message = `🍣 *NUEVO PEDIDO WEB - SO SUSHI* 🍣\n`;
-            message += `📅 *Fecha:* ${new Date().toLocaleDateString()}\n`;
-            message += `────────────────────\n\n`;
-            
-            message += `👤 *DATOS DEL CLIENTE*\n`;
-            message += `▪️ *Cliente:* ${name}\n`;
-            message += `▪️ *Tel:* ${phone}\n`;
-            
-            if (userLocation) {
-                 message += `📍 *Ubicación GPS:* ${userLocation.mapUrl}\n`;
-                 message += `📏 *Distancia:* ${distanceKm} km\n`;
-                 message += `📝 *Ref:* ${address} ${addressDetails ? '- ' + addressDetails : ''}\n`;
-            } else {
-                 message += `📍 *Dirección Manual:* ${address}\n`;
-                 if(addressDetails) message += `📝 *Ref:* ${addressDetails}\n`;
-            }
-            
-            message += `\n📋 *DETALLE DE LA ORDEN*\n`;
-            message += `────────────────────\n`;
-            
-            cart.forEach(item => {
-                const itemTotal = item.price * item.quantity;
-                message += `🥢 *${item.quantity}x ${item.name}*\n`;
-                message += `    ↳ 🐟 ${item.protein}\n`;
-                if(item.note) {
-                    message += `    ↳ ✏️ _${item.note}_\n`;
-                }
-                message += `    ↳ 💲$${itemTotal.toFixed(2)}\n\n`;
-            });
-
-            message += `────────────────────\n`;
-            message += `💵 *Subtotal:* $${subtotal.toFixed(2)}\n`;
-            
-            // Lógica de Envío en Mensaje
-            if (currentShippingCost === 0) {
-                 let reasonMsg = "GRATIS";
-                 if(freeShippingReason) reasonMsg += ` (${freeShippingReason})`;
-                 message += `🛵 *Envío:* ${reasonMsg}\n`;
-            } else {
-                 message += `🛵 *Envío (${distanceKm}km x $${SHIPPING_COST_PER_KM}):* $${currentShippingCost.toFixed(2)}\n`;
-            }
-
-            message += `💰 *TOTAL A PAGAR: $${total.toFixed(2)}*\n`;
-            message += `────────────────────\n\n`;
-            
-            message += paymentDetailsMsg;
-
-            const NUMERO_WHATSAPP = "3348168590"; 
-            
-            const url = `https://wa.me/521${NUMERO_WHATSAPP}?text=${encodeURIComponent(message)}`;
-            window.open(url, '_blank');
+        function resetOrder() {
+            cart = []; isCheckoutMode = false;
+            document.getElementById('customer-name').value = ""; document.getElementById('customer-phone').value = ""; document.getElementById('customer-address').value = ""; document.getElementById('customer-address-details').value = ""; document.getElementById('payment-amount').value = "";
+            document.querySelector('input[value="transferencia"]').checked = true; togglePaymentMethod();
+            const modal = document.getElementById('cart-modal'); if(modal.classList.contains('active')) { modal.classList.remove('active'); document.body.classList.remove('modal-open'); }
+            updateCartUI();
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            renderMenu();
-            updateCartUI();
-        });
+        function handleCheckout() {
+            if(!isStoreOpen()) { alert("Restaurante cerrado. No podemos procesar tu pedido."); return; }
+            const formSection = document.getElementById('checkout-form');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            if (!isCheckoutMode) { formSection.classList.remove('hidden'); checkoutBtn.innerHTML = `<i class="fa-brands fa-whatsapp text-xl"></i> Confirmar Pedido`; isCheckoutMode = true; setTimeout(() => { const modalContent = document.querySelector('.cart-items'); modalContent.scrollTop = modalContent.scrollHeight; }, 100); return; }
+            const name = document.getElementById('customer-name').value.trim(); const phone = document.getElementById('customer-phone').value.trim(); const address = document.getElementById('customer-address').value.trim(); const addressDetails = document.getElementById('customer-address-details').value.trim(); const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+            if (!name || !phone) { alert("Por favor escribe tu nombre y teléfono."); return; }
+            if (!address) { alert("Por favor ingresa tu dirección de entrega completa."); return; }
+            let paymentDetailsMsg = ""; let changeAmount = 0; const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0); const total = subtotal + currentShippingCost;
+            if (paymentMethod === 'efectivo') {
+                const amountPay = parseFloat(document.getElementById('payment-amount').value);
+                if (!amountPay || isNaN(amountPay) || amountPay < total) { alert(`Por favor ingresa un monto válido para pagar (mínimo $${total.toFixed(2)}).`); return; }
+                changeAmount = amountPay - total; paymentDetailsMsg += `💵 *PAGO: EFECTIVO*\n`; paymentDetailsMsg += `🔢 *Paga con:* $${amountPay.toFixed(2)}\n`; paymentDetailsMsg += `🔄 *Cambio:* $${changeAmount.toFixed(2)}\n`;
+            } else { paymentDetailsMsg += `💳 *PAGO: TRANSFERENCIA*\n`; paymentDetailsMsg += `📎 _(Adjunto comprobante a continuación)_`; }
+            let message = `🍣 *NUEVO PEDIDO WEB - SO SUSHI* 🍣\n`; message += `📅 *Fecha:* ${new Date().toLocaleDateString()}\n`; message += `────────────────────\n\n`; message += `👤 *DATOS DEL CLIENTE*\n`; message += `▪️ *Cliente:* ${name}\n`; message += `▪️ *Tel:* ${phone}\n`; message += `📍 *Dirección:* ${address}\n`; if(addressDetails) message += `📝 *Ref:* ${addressDetails}\n`; message += `\n📋 *DETALLE DE LA ORDEN*\n`; message += `────────────────────\n`;
+            cart.forEach(item => { const itemTotal = item.price * item.quantity; message += `🥢 *${item.quantity}x ${item.name}*\n`; message += `    ↳ 🐟 ${item.protein}\n`; if(item.note) { message += `    ↳ ✏️ _${item.note}_\n`; } message += `    ↳ 💲$${itemTotal.toFixed(2)}\n\n`; });
+            message += `────────────────────\n`; message += `💵 *Subtotal:* $${subtotal.toFixed(2)}\n`; if (currentShippingCost === 0) { let reasonMsg = "GRATIS"; if(freeShippingReason) reasonMsg += ` (${freeShippingReason})`; message += `🛵 *Envío:* ${reasonMsg}\n`; } else { message += `🛵 *Envío (${distanceKm}km x $${SHIPPING_COST_PER_KM}):* $${currentShippingCost.toFixed(2)}\n`; } message += `💰 *TOTAL A PAGAR: $${total.toFixed(2)}*\n`; message += `────────────────────\n\n`; message += paymentDetailsMsg;
+            const NUMERO_WHATSAPP = "3348168590"; 
+            const url = `https://wa.me/521${NUMERO_WHATSAPP}?text=${encodeURIComponent(message)}`; window.open(url, '_blank'); resetOrder();
+        }
+
+        function checkStoreStatus() {
+            const statusBanner = document.getElementById('status-banner');
+            if (!isStoreOpen()) { statusBanner.classList.remove('free-shipping-banner'); statusBanner.style.backgroundColor = '#ef4444'; statusBanner.style.animation = 'none'; statusBanner.innerHTML = `<i class="fa-solid fa-lock"></i> CERRADO - Horario: 4:00 PM a 11:00 PM`; const heroBadge = document.getElementById('hero-badge'); if(heroBadge) { heroBadge.className = "inline-block bg-red-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow mb-4"; heroBadge.innerHTML = `<i class="fa-solid fa-clock"></i> Restaurante Cerrado`; } }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { checkStoreStatus(); renderMenu(); updateCartUI(); calculateShipping(false); resetIdleTimer(); });
     </script>
 </body>
 </html>
