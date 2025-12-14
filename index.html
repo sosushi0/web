@@ -106,6 +106,15 @@
         .free-shipping-banner {
             animation: pulse-green 2s infinite;
         }
+        
+        /* Animación de carga para ubicación */
+        .loading-spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="text-gray-100">
@@ -114,7 +123,7 @@
     <nav class="bg-black shadow-lg fixed w-full z-50 top-0 border-b border-gray-800">
         <!-- Banner de Envío Gratis -->
         <div class="free-shipping-banner text-white text-center py-1 text-xs font-bold tracking-wider uppercase">
-            <i class="fa-solid fa-motorcycle mr-1"></i> ¡Envío a Domicilio GRATIS! <i class="fa-solid fa-motorcycle ml-1"></i>
+            <i class="fa-solid fa-motorcycle mr-1"></i> ¡Envío GRATIS &lt; 1km o pedidos +$250! <i class="fa-solid fa-motorcycle ml-1"></i>
         </div>
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -145,7 +154,7 @@
             <h1 class="text-5xl font-bold text-white mb-2 drop-shadow-xl">SO SUSHI</h1>
             <p class="text-gray-300 text-lg font-light mb-2">¡Grandes descuentos en todo el menú!</p>
             <div class="inline-block bg-green-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow mb-4">
-                <i class="fa-solid fa-check"></i> Envío Gratis
+                <i class="fa-solid fa-check"></i> Envío Gratis &lt; 1km o &gt; $250
             </div>
             <div class="flex justify-center gap-3">
                 <a href="#menu-start" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full text-sm font-bold transition shadow-lg">
@@ -227,12 +236,25 @@
 
             <!-- Checkout Form Section -->
             <div class="p-5 bg-gray-800 border-t border-gray-700 shadow-[0_-5px_15px_rgba(0,0,0,0.3)] overflow-y-auto max-h-[80vh]">
-                <!-- Aviso Envío Gratis en Checkout -->
-                <div class="mb-3 bg-green-900/30 border border-green-700 rounded p-2 text-center">
-                    <p class="text-green-400 text-xs font-bold"><i class="fa-solid fa-check-circle"></i> Envío GRATIS aplicado</p>
+                
+                <div class="flex justify-between items-center mb-1 text-base text-gray-400">
+                    <span>Subtotal:</span>
+                    <span id="cart-subtotal" class="text-white">$0.00</span>
+                </div>
+                <div class="flex justify-between items-center mb-1 text-base text-gray-400">
+                    <span>Envío:</span>
+                    <span id="cart-shipping" class="text-white font-bold">--</span>
+                </div>
+                
+                <!-- Barra de progreso para envío gratis -->
+                <div id="free-shipping-progress" class="hidden mb-3">
+                    <div class="w-full bg-gray-700 rounded-full h-1.5 mb-1">
+                        <div id="progress-bar-fill" class="bg-green-500 h-1.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p id="progress-text" class="text-[10px] text-green-400 text-right">¡Te faltan $50 para envío gratis!</p>
                 </div>
 
-                <div class="flex justify-between items-center mb-4 text-xl font-bold text-white">
+                <div class="flex justify-between items-center mb-4 text-xl font-bold text-white border-t border-gray-700 pt-2">
                     <span>Total:</span>
                     <span id="cart-total" class="text-red-500">$0.00</span>
                 </div>
@@ -245,54 +267,81 @@
                             <input type="text" id="customer-name" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Dirección de Entrega</label>
-                            <textarea id="customer-address" rows="2" placeholder="Calle, número, colonia..." class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 mb-2"></textarea>
-                            <input type="text" id="customer-address-details" placeholder="Referencias (Casa azul, entre calles...)" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 text-sm">
-                        </div>
-                        <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Teléfono</label>
                             <input type="tel" id="customer-phone" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500">
+                        </div>
+
+                        <!-- Sección de Ubicación Inteligente -->
+                        <div class="bg-gray-700/50 p-3 rounded border border-gray-600">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Ubicación de Entrega</label>
+                            
+                            <button onclick="calculateShipping()" id="btn-location" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-2 rounded mb-2 flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-location-dot"></i> 📍 Calcular Envío (GPS)
+                            </button>
+                            
+                            <div id="location-result" class="hidden text-xs mt-2 p-2 bg-gray-800 rounded border border-gray-700">
+                                <!-- Resultado JS -->
+                            </div>
+
+                            <textarea id="customer-address" rows="2" placeholder="O escribe tu dirección manual aquí..." class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 mt-2 text-sm"></textarea>
+                            <input type="text" id="customer-address-details" placeholder="Referencias (Color casa, entre calles...)" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 text-sm mt-2">
                         </div>
                         
                         <!-- Sección de Método de Pago -->
                         <div class="mt-4 pt-4 border-t border-gray-700">
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Método de Pago</label>
+                            
+                            <!-- Selectores de Método (Radio Buttons) -->
                             <div class="flex gap-4 mb-3">
                                 <label class="flex items-center cursor-pointer">
-                                    <input type="radio" name="payment-method" value="efectivo" checked onchange="togglePaymentMethod()" class="text-red-600 focus:ring-red-500 bg-gray-700 border-gray-600">
-                                    <span class="ml-2 text-sm text-white">Efectivo</span>
-                                </label>
-                                <label class="flex items-center cursor-pointer">
-                                    <input type="radio" name="payment-method" value="transferencia" onchange="togglePaymentMethod()" class="text-red-600 focus:ring-red-500 bg-gray-700 border-gray-600">
+                                    <input type="radio" name="payment-method" value="transferencia" checked onchange="togglePaymentMethod()" class="text-red-600 focus:ring-red-500 bg-gray-700 border-gray-600">
                                     <span class="ml-2 text-sm text-white">Transferencia</span>
                                 </label>
+                                <!-- Opción Efectivo (Oculta por defecto, se activa si distancia <= 1km) -->
+                                <label id="opt-cash" class="hidden items-center cursor-pointer">
+                                    <input type="radio" name="payment-method" value="efectivo" onchange="togglePaymentMethod()" class="text-red-600 focus:ring-red-500 bg-gray-700 border-gray-600">
+                                    <span class="ml-2 text-sm text-white">Efectivo</span>
+                                </label>
                             </div>
 
-                            <!-- Opciones Efectivo -->
-                            <div id="cash-options" class="transition-all duration-300">
-                                <div class="flex items-center bg-gray-700 p-2 rounded border border-gray-600">
-                                    <input type="checkbox" id="need-change" onchange="toggleChangeInput()" class="w-4 h-4 text-red-600 rounded bg-gray-600 border-gray-500 focus:ring-red-500">
-                                    <label for="need-change" class="ml-2 text-sm text-gray-300">¿Necesitas cambio?</label>
+                            <!-- Opciones Transferencia (Default) -->
+                            <div id="transfer-options" class="transition-all duration-300">
+                                <div class="bg-gray-700 p-3 rounded border border-gray-600 text-sm">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i class="fa-solid fa-building-columns text-green-500"></i>
+                                        <span class="text-white font-bold">Transferencia Bancaria</span>
+                                    </div>
+                                    <p class="text-gray-400 text-xs mb-2">Realiza tu pago a la siguiente cuenta:</p>
+                                    
+                                    <div class="bg-gray-800 p-2 rounded mb-2">
+                                        <p class="text-white mb-1 text-xs"><span class="text-gray-400 w-16 inline-block">Banco:</span> <span class="font-bold text-white">BBVA</span></p>
+                                        <p class="text-white mb-1 text-xs"><span class="text-gray-400 w-16 inline-block">CLABE:</span> <span class="font-mono text-green-400 select-all font-bold">012 180 01542692475 7</span></p>
+                                        <p class="text-white text-xs"><span class="text-gray-400 w-16 inline-block">Titular:</span> <span class="font-bold text-white">So Sushi</span></p>
+                                    </div>
+                                    
+                                    <p class="text-xs text-yellow-500 mt-2 flex items-start gap-1">
+                                        <i class="fa-solid fa-triangle-exclamation mt-0.5"></i> 
+                                        <span>Importante: Envía tu comprobante por WhatsApp al finalizar.</span>
+                                    </p>
                                 </div>
-                                <div id="change-input-container" class="hidden mt-2 animate-fade-in">
-                                    <label class="block text-xs text-gray-400 mb-1">Pagarás con billete de:</label>
+                            </div>
+
+                            <!-- Opciones Efectivo (Solo visible si selecciona efectivo) -->
+                            <div id="cash-options" class="hidden transition-all duration-300">
+                                <div class="bg-gray-700 p-3 rounded border border-gray-600 text-sm">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i class="fa-solid fa-money-bill-wave text-green-500"></i>
+                                        <span class="text-white font-bold">Pago en Efectivo</span>
+                                    </div>
+                                    <label class="block text-xs text-gray-400 mb-1">¿Con cuánto vas a pagar?</label>
                                     <div class="relative">
                                         <span class="absolute left-3 top-2 text-gray-400">$</span>
-                                        <input type="number" id="payment-amount" placeholder="500" class="w-full bg-gray-700 border border-gray-600 rounded p-2 pl-6 text-white focus:border-red-500 outline-none">
+                                        <input type="number" id="payment-amount" placeholder="Ej. 500" class="w-full bg-gray-800 border border-gray-600 rounded p-2 pl-6 text-white focus:border-red-500 outline-none text-sm">
                                     </div>
+                                    <p class="text-[10px] text-gray-400 mt-1">El repartidor llevará tu cambio.</p>
                                 </div>
                             </div>
 
-                            <!-- Opciones Transferencia -->
-                            <div id="transfer-options" class="hidden transition-all duration-300">
-                                <div class="bg-gray-700 p-3 rounded border border-gray-600 text-sm">
-                                    <p class="text-gray-400 text-xs uppercase font-bold mb-2">Datos para transferir:</p>
-                                    <p class="text-white mb-1"><span class="text-gray-400">Banco:</span> <span class="font-bold">BBVA</span></p>
-                                    <p class="text-white mb-1"><span class="text-gray-400">CLABE:</span> <span class="font-mono bg-gray-800 px-1 rounded select-all">012 180 01542692475 7</span></p>
-                                    <p class="text-white"><span class="text-gray-400">Titular:</span> <span class="font-bold">So Sushi</span></p>
-                                    <p class="text-xs text-yellow-500 mt-2"><i class="fa-solid fa-triangle-exclamation"></i> Envía tu comprobante por WhatsApp al finalizar.</p>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -311,13 +360,23 @@
 
     <!-- Javascript Logic -->
     <script>
-        // --- DATOS DEL MENÚ ---
+        // --- CONFIGURACIÓN DE LA TIENDA ---
+        const STORE_COORDS = { lat: 20.648325, lng: -103.267706 };
         
-        // Listas de Proteínas
+        // Configuración de Tarifas
+        const SHIPPING_FREE_THRESHOLD = 250; // Envío gratis si subtotal >= 250
+        const SHIPPING_FREE_KM = 1.0; // Envío gratis si distancia <= 1km
+        const SHIPPING_COST_PER_KM = 11; // Costo por km extra
+
+        // Variables Globales
+        let currentShippingCost = 0;
+        let userLocation = null; // Guardará {lat, lng, mapUrl}
+        let distanceKm = 0;
+        let freeShippingReason = ""; // Para mostrar por qué es gratis
+
+        // --- DATOS DEL MENÚ ---
         const proteinasEstandar = ["Camarón", "Pollo", "Surimi"];
         const proteinasLimitadas = ["Pollo", "Camarón"]; 
-        
-        // Imagen por defecto
         const defaultImage = "defaul.jpg";
 
         const menuPromos = [
@@ -325,57 +384,154 @@
             { id: "promo2", name: "Promo Empa & Bocados", description: "2 Rollos Empanizados + 1 Orden de Bocados de Arroz.", originalPrice: 255, price: 170, image: "empanizado.jpeg", proteins: [] }
         ];
 
-        // PRECIO ACTUALIZADO: $80
         const menuEspeciales = [
             { id: "esp1", name: "Mata Hambre", description: "Rollo empanizado con queso gratinado y topping de tocino crocante.", originalPrice: 110, price: 80, image: "mata.jpeg", proteins: proteinasEstandar },
             { id: "esp2", name: "Nachito Roll", description: "Rollo empanizado con queso amarillo y rodajas de chile jalapeño.", originalPrice: 110, price: 80, image: "nachito.jpeg", proteins: proteinasEstandar },
-            { id: "esp3", name: "Chipotle Roll", description: "Rollo empanizado cubierto de aderezo de chipotle.", originalPrice: 110, price: 80, image: defaultImage, proteins: proteinasEstandar },
-            { id: "esp4", name: "Empanizado Coronado", description: "Rollo empanizado con topping de ensalada de surimi.", originalPrice: 110, price: 80, image: defaultImage, proteins: proteinasEstandar },
-            { id: "esp5", name: "Queso Roll", description: "Rollo empanizado con delicioso queso gratinado.", originalPrice: 110, price: 80, image: "queso.jpeg", proteins: proteinasEstandar },
-            { id: "esp6", name: "Macho Roll", description: "Rollo forrado de plátano frito con toque de salsa de anguila.", originalPrice: 110, price: 80, image: "machito.jpeg", proteins: proteinasEstandar }
+            { id: "esp3", name: "Chipotle Roll", description: "Rollo empanizado con aderezo chipotle.", originalPrice: 110, price: 80, image: defaultImage, proteins: proteinasEstandar },
+            { id: "esp4", name: "Empanizado Coronado", description: "Rollo empanizado con topping de surimi.", originalPrice: 110, price: 80, image: defaultImage, proteins: proteinasEstandar },
+            { id: "esp5", name: "Queso Roll", description: "Rollo empanizado con queso gratinado.", originalPrice: 110, price: 80, image: "queso.jpeg", proteins: proteinasEstandar },
+            { id: "esp6", name: "Macho Roll", description: "Rollo forrado de plátano frito.", originalPrice: 110, price: 80, image: "machito.jpeg", proteins: proteinasEstandar }
         ];
 
-        // PRECIO ACTUALIZADO: $70
         const menuClasicos = [
-            { id: "cls1", name: "Ajonjolí", description: "Rollo cubierto de ajonjolí por fuera. Relleno clásico.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
-            { id: "cls2", name: "Philadelphia Empanizado", description: "Rollo empanizado con philadelphia por dentro y fuera.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
-            { id: "cls3", name: "Aguacatito", description: "Rollo forrado de aguacate fresco. Relleno a elegir.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
-            { id: "cls4", name: "Empanizado Tradicional", description: "Rollo empanizado por fuera, crujiente y delicioso.", originalPrice: 90, price: 70, image: "empanizado.jpeg", proteins: proteinasEstandar },
-            { id: "cls5", name: "Philadelphia (Natural)", description: "Rollo cubierto de queso crema por fuera. Relleno clásico.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
+            { id: "cls1", name: "Ajonjolí", description: "Rollo cubierto de ajonjolí.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
+            { id: "cls2", name: "Philadelphia Empanizado", description: "Queso crema dentro y fuera.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
+            { id: "cls3", name: "Aguacatito", description: "Rollo forrado de aguacate.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
+            { id: "cls4", name: "Empanizado Tradicional", description: "Crujiente y delicioso.", originalPrice: 90, price: 70, image: "empanizado.jpeg", proteins: proteinasEstandar },
+            { id: "cls5", name: "Philadelphia (Natural)", description: "Queso crema por fuera.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar },
             { id: "cls6", name: "California", description: "Rollo con alga por fuera.", originalPrice: 90, price: 70, image: defaultImage, proteins: proteinasEstandar }
         ];
 
-        // AGREGADO ARROZ CULICHI
         const menuExtras = [
-            { id: "rice1", name: "Yakimeshi Sencillo", description: "Arroz frito con vegetales (Sin proteina).", originalPrice: 70, price: 50, image: "sen.jpeg", proteins: ["Vegetales"] },
-            { id: "rice2", name: "Yakimeshi Proteína", description: "Arroz frito especial con tu proteína favorita (Pollo o Camarón).", originalPrice: 85, price: 60, image: "a.jpeg", proteins: proteinasLimitadas },
-            { id: "rice3", name: "Arroz Culichi", description: "Delicioso arroz frito con proteina,aguacate, y queso philadelphia.", originalPrice: 100, price: 70, image: "culichi.jpeg", proteins: proteinasLimitadas },
-            { id: "app1", name: "Bocados de Arroz", description: "4 Bolitas de arroz empanizadas con queso mozarella dentro con un toque de anguila.", originalPrice: 65, price: 55, image: "bolitas.png", proteins: ["Queso"] }
+            { id: "rice1", name: "Yakimeshi Sencillo", description: "Arroz frito vegetales.", originalPrice: 70, price: 50, image: "sen.jpeg", proteins: ["Vegetales"] },
+            { id: "rice2", name: "Yakimeshi Proteína", description: "Arroz frito pollo o camarón.", originalPrice: 85, price: 60, image: "a.jpeg", proteins: proteinasLimitadas },
+            { id: "rice3", name: "Arroz Culichi", description: "Arroz frito, aguacate, philadelphia.", originalPrice: 100, price: 70, image: "culichi.jpeg", proteins: proteinasLimitadas },
+            { id: "app1", name: "Bocados de Arroz", description: "4 Bolitas empanizadas con queso.", originalPrice: 65, price: 55, image: "bolitas.png", proteins: ["Queso"] }
         ];
 
         const allItems = [...menuPromos, ...menuEspeciales, ...menuClasicos, ...menuExtras];
-
-        // --- Generar Opciones de Proteína para la Promo 2 (Empanizados) ---
         const proteinOptionsForPromo2 = proteinasEstandar.map(p => `<option value="${p}">${p}</option>`).join('');
-
-        // --- Generar Opciones ESPECIALES para Promo 1 (Solo Ajonjolí y Empanizado Tradicional) ---
-        // Filtramos solo los rolls permitidos
         const allowedPromoRolls = ["Ajonjolí", "Empanizado Tradicional"];
-        const promo1Options = menuClasicos
-            .filter(c => allowedPromoRolls.includes(c.name))
-            .map(c => `<option value="${c.name}">${c.name}</option>`)
-            .join('');
+        const promo1Options = menuClasicos.filter(c => allowedPromoRolls.includes(c.name)).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
 
         let cart = [];
         let isCheckoutMode = false;
 
+        // --- FUNCIONES DE GEOLOCALIZACIÓN Y DISTANCIA ---
+
+        function calculateShipping() {
+            const btn = document.getElementById('btn-location');
+            const resultDiv = document.getElementById('location-result');
+            const cashRadio = document.getElementById('opt-cash'); // Referencia al botón de efectivo
+            
+            if (!navigator.geolocation) {
+                alert("Tu navegador no soporta geolocalización.");
+                return;
+            }
+
+            btn.innerHTML = `<i class="fa-solid fa-spinner loading-spin"></i> Localizando...`;
+            btn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    // Calcular Distancia
+                    const dist = getDistanceFromLatLonInKm(STORE_COORDS.lat, STORE_COORDS.lng, lat, lng);
+                    distanceKm = parseFloat(dist.toFixed(2));
+                    
+                    // Guardar datos
+                    userLocation = {
+                        lat: lat,
+                        lng: lng,
+                        mapUrl: `https://www.google.com/maps?q=${lat},${lng}`
+                    };
+
+                    resultDiv.classList.remove('hidden');
+                    
+                    // Mostrar resultados en UI
+                    resultDiv.innerHTML = `
+                        <p class="text-green-400 font-bold"><i class="fa-solid fa-check-circle"></i> Ubicación detectada</p>
+                        <p class="text-gray-300">Distancia: <span class="font-mono text-white">${distanceKm} km</span></p>
+                    `;
+                    document.getElementById('customer-address').placeholder = "Ubicación GPS guardada. Añade detalles (número, color casa) aquí...";
+
+                    // LOGICA DE PAGOS: Habilitar efectivo si está cerca
+                    if (distanceKm <= 1.0) {
+                        cashRadio.classList.remove('hidden');
+                        cashRadio.classList.add('flex');
+                    } else {
+                        cashRadio.classList.add('hidden');
+                        cashRadio.classList.remove('flex');
+                        // Si estaba seleccionado efectivo, regresar a transferencia
+                        const transferRadio = document.querySelector('input[value="transferencia"]');
+                        if (transferRadio) {
+                            transferRadio.checked = true;
+                            togglePaymentMethod();
+                        }
+                    }
+
+                    btn.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Recalcular Ubicación`;
+                    btn.disabled = false;
+                    btn.classList.replace('bg-blue-600', 'bg-gray-600');
+                    
+                    // IMPORTANTE: Recalcular totales ahora que tenemos distancia
+                    updateCartUI(); 
+                },
+                (error) => {
+                    console.error(error);
+                    btn.innerHTML = `<i class="fa-solid fa-location-dot"></i> Reintentar GPS`;
+                    btn.disabled = false;
+                    let msg = "Error al obtener ubicación.";
+                    if(error.code == 1) msg = "Permiso de ubicación denegado.";
+                    alert(msg + " Por favor ingresa tu dirección manualmente.");
+                    
+                    // En caso de error, aseguramos que efectivo esté oculto (por seguridad)
+                    cashRadio.classList.add('hidden');
+                    cashRadio.classList.remove('flex');
+                },
+                { enableHighAccuracy: true }
+            );
+        }
+
+        function togglePaymentMethod() {
+            const method = document.querySelector('input[name="payment-method"]:checked').value;
+            const cashOptions = document.getElementById('cash-options');
+            const transferOptions = document.getElementById('transfer-options');
+
+            if (method === 'efectivo') {
+                cashOptions.classList.remove('hidden');
+                transferOptions.classList.add('hidden');
+            } else {
+                cashOptions.classList.add('hidden');
+                transferOptions.classList.remove('hidden');
+            }
+        }
+
+        // Fórmula de Haversine
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radio de la tierra en km
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a =
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const d = R * c; // Distancia en km
+            return d;
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+
         // --- Renderizado del Menú ---
         function createCard(item, isOffer) {
             const offerBadge = isOffer ? `<div class="badge-offer">Oferta</div>` : '';
-            
             let selectorHTML = '';
 
-            // Lógica Especial para la Promoción 1 (2 Clásicos LIMITADOS)
             if (item.id === 'promo1') {
                 selectorHTML = `
                     <div class="bg-gray-700/50 p-2 rounded mb-2 border border-gray-600">
@@ -393,9 +549,7 @@
                         </div>
                     </div>
                 `;
-            } 
-            // Lógica Especial para la Promoción 2 (2 Empanizados + Bocados)
-            else if (item.id === 'promo2') {
+            } else if (item.id === 'promo2') {
                 selectorHTML = `
                     <div class="bg-gray-700/50 p-2 rounded mb-2 border border-gray-600">
                         <div class="mb-2">
@@ -413,9 +567,7 @@
                         <div class="mt-1 text-[10px] text-yellow-500 font-medium text-center italic"><i class="fa-solid fa-plus"></i> Bocados de Arroz incluido</div>
                     </div>
                 `;
-            }
-            else {
-                // Selector Normal de Proteína
+            } else {
                 const proteinOptions = item.proteins.map(p => `<option value="${p}">${p}</option>`).join('');
                 selectorHTML = `
                     <div class="flex items-center gap-2 mb-2">
@@ -447,7 +599,6 @@
                     
                     <div class="mt-auto bg-gray-900/50 p-2 rounded-lg border border-gray-700">
                         ${selectorHTML}
-                        
                         <button onclick="addToCart('${item.id}')" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded transition duration-300 flex items-center justify-center gap-2 shadow-lg active:scale-95 text-sm">
                             <i class="fa-solid fa-plus"></i> Agregar
                         </button>
@@ -494,13 +645,12 @@
                     originalId: id,
                     name: item.name,
                     price: item.price,
-                    protein: selectedVariant, // Reutilizamos este campo para mostrar la variante/promo
+                    protein: selectedVariant,
                     image: item.image,
                     quantity: 1,
                     note: "" 
                 });
             }
-
             updateCartUI();
             showToast(`${item.name} agregado`);
         }
@@ -532,20 +682,88 @@
         function updateCartUI() {
             const container = document.getElementById('cart-items-container');
             const totalEl = document.getElementById('cart-total');
+            const subtotalEl = document.getElementById('cart-subtotal');
+            const shippingEl = document.getElementById('cart-shipping');
             const countEl = document.getElementById('cart-count');
             const formSection = document.getElementById('checkout-form');
             const checkoutBtn = document.getElementById('checkout-btn');
+            
+            // Elementos de progreso
+            const progressContainer = document.getElementById('free-shipping-progress');
+            const progressBarFill = document.getElementById('progress-bar-fill');
+            const progressText = document.getElementById('progress-text');
 
             const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
             countEl.innerText = totalItems;
-            
             if(totalItems > 0) {
                 countEl.classList.add('scale-125');
                 setTimeout(() => countEl.classList.remove('scale-125'), 200);
             }
 
-            const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            totalEl.innerText = `$${totalPrice.toFixed(2)}`;
+            // --- CÁLCULOS DINÁMICOS DE COSTO ---
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            // Verificamos si ya es gratis por distancia
+            const isFreeByDistance = userLocation && distanceKm <= SHIPPING_FREE_KM;
+
+            // Barra de progreso
+            if (isFreeByDistance) {
+                // Si el envío ya es gratis por distancia, ocultamos la barra
+                progressContainer.classList.add('hidden');
+            } else if (subtotal > 0 && subtotal < SHIPPING_FREE_THRESHOLD) {
+                // Si no es gratis por distancia y falta para los 250
+                progressContainer.classList.remove('hidden');
+                const percent = (subtotal / SHIPPING_FREE_THRESHOLD) * 100;
+                const missing = SHIPPING_FREE_THRESHOLD - subtotal;
+                progressBarFill.style.width = `${percent}%`;
+                progressText.innerText = `¡Te faltan $${missing.toFixed(2)} para envío gratis!`;
+                progressText.className = "text-[10px] text-green-400 text-right";
+            } else if (subtotal >= SHIPPING_FREE_THRESHOLD) {
+                progressContainer.classList.remove('hidden');
+                progressBarFill.style.width = `100%`;
+                progressText.innerText = `¡Felicidades! Tienes envío gratis.`;
+                progressText.className = "text-[10px] text-yellow-400 text-right";
+            } else {
+                progressContainer.classList.add('hidden');
+            }
+
+            // Lógica de Envío
+            if (userLocation) {
+                if (subtotal >= SHIPPING_FREE_THRESHOLD) {
+                    currentShippingCost = 0;
+                    freeShippingReason = "Pedido > $250";
+                } else if (distanceKm <= SHIPPING_FREE_KM) {
+                    currentShippingCost = 0;
+                    freeShippingReason = "Distancia < 1km";
+                } else {
+                    // Cálculo: distancia * costo por km
+                    // Redondeamos hacia arriba para no perder centavos
+                    currentShippingCost = Math.ceil(distanceKm * SHIPPING_COST_PER_KM);
+                    freeShippingReason = "";
+                }
+            } else {
+                currentShippingCost = 0; // Se queda en 0 hasta calcular
+            }
+
+            const total = subtotal + currentShippingCost;
+
+            subtotalEl.innerText = `$${subtotal.toFixed(2)}`;
+            totalEl.innerText = `$${total.toFixed(2)}`;
+
+            // UI del Texto de Envío
+            if (!userLocation) {
+                shippingEl.innerText = "Calculando...";
+                shippingEl.className = "text-yellow-500 font-bold text-sm italic";
+                if(subtotal > 0) shippingEl.innerText = "Calcula ubicación";
+            } else {
+                if (currentShippingCost === 0) {
+                    shippingEl.innerHTML = `GRATIS <span class="text-[10px] bg-green-700 px-1 rounded ml-1 font-normal">${freeShippingReason}</span>`;
+                    shippingEl.className = "text-green-400 font-bold";
+                } else {
+                    shippingEl.innerText = `$${currentShippingCost.toFixed(2)}`;
+                    shippingEl.className = "text-white font-bold";
+                }
+            }
 
             if (cart.length === 0) {
                 container.innerHTML = `
@@ -560,6 +778,17 @@
                 checkoutBtn.classList.add('bg-gray-700', 'cursor-not-allowed');
                 checkoutBtn.classList.remove('bg-green-600', 'hover:bg-green-500');
                 isCheckoutMode = false;
+                
+                // Reset parcial
+                currentShippingCost = 0;
+                document.getElementById('location-result').classList.add('hidden');
+                document.getElementById('btn-location').classList.replace('bg-gray-600', 'bg-blue-600');
+                document.getElementById('btn-location').innerHTML = `<i class="fa-solid fa-location-dot"></i> 📍 Calcular Envío (GPS)`;
+                userLocation = null; // Reseteamos ubicación para obligar a recalcular si inician de cero? (Opcional, lo dejaremos para mejor UX si recargan)
+                // Ocultar opción efectivo al reiniciar
+                document.getElementById('opt-cash').classList.add('hidden');
+                document.getElementById('opt-cash').classList.remove('flex');
+                
             } else {
                 checkoutBtn.disabled = false;
                 checkoutBtn.classList.remove('bg-gray-700', 'cursor-not-allowed');
@@ -601,39 +830,11 @@
         function toggleCart() {
             const modal = document.getElementById('cart-modal');
             const body = document.body;
-            
             modal.classList.toggle('active');
-            
-            // Bloquear/Desbloquear el scroll del fondo
             if (modal.classList.contains('active')) {
                 body.classList.add('modal-open');
             } else {
                 body.classList.remove('modal-open');
-            }
-        }
-
-        function toggleChangeInput() {
-            const checkbox = document.getElementById('need-change');
-            const container = document.getElementById('change-input-container');
-            if (checkbox.checked) {
-                container.classList.remove('hidden');
-                document.getElementById('payment-amount').focus();
-            } else {
-                container.classList.add('hidden');
-            }
-        }
-
-        function togglePaymentMethod() {
-            const method = document.querySelector('input[name="payment-method"]:checked').value;
-            const cashOptions = document.getElementById('cash-options');
-            const transferOptions = document.getElementById('transfer-options');
-
-            if (method === 'efectivo') {
-                cashOptions.classList.remove('hidden');
-                transferOptions.classList.add('hidden');
-            } else {
-                cashOptions.classList.add('hidden');
-                transferOptions.classList.remove('hidden');
             }
         }
 
@@ -667,26 +868,50 @@
             }
 
             const name = document.getElementById('customer-name').value.trim();
+            const phone = document.getElementById('customer-phone').value.trim();
             const address = document.getElementById('customer-address').value.trim();
             const addressDetails = document.getElementById('customer-address-details').value.trim();
-            const phone = document.getElementById('customer-phone').value.trim();
-            
             const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
-            const needChange = document.getElementById('need-change').checked;
-            const paymentAmount = document.getElementById('payment-amount').value;
             
-            if (!name || !address || !phone) {
-                alert("Por favor completa tu nombre, dirección y teléfono.");
+            if (!name || !phone) {
+                alert("Por favor escribe tu nombre y teléfono.");
                 return;
             }
 
-            if (paymentMethod === 'efectivo' && needChange && !paymentAmount) {
-                alert("Indica con cuánto pagarás para calcular el cambio.");
-                return;
+            // Validar si usó GPS
+            if (userLocation) {
+                 if (!address && !addressDetails) {
+                     alert("Por favor agrega alguna referencia (color de casa, entre calles) para ayudar al repartidor.");
+                     return;
+                 }
+            } else {
+                if (!address) {
+                    alert("Por favor ingresa tu dirección o usa el botón de 'Calcular Envío'.");
+                    return;
+                }
+            }
+            
+            // Validaciones específicas de pago
+            let paymentDetailsMsg = "";
+            let changeAmount = 0;
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const total = subtotal + currentShippingCost;
+
+            if (paymentMethod === 'efectivo') {
+                const amountPay = parseFloat(document.getElementById('payment-amount').value);
+                if (!amountPay || isNaN(amountPay) || amountPay < total) {
+                    alert(`Por favor ingresa un monto válido para pagar (mínimo $${total.toFixed(2)}).`);
+                    return;
+                }
+                changeAmount = amountPay - total;
+                paymentDetailsMsg += `💵 *PAGO: EFECTIVO*\n`;
+                paymentDetailsMsg += `🔢 *Paga con:* $${amountPay.toFixed(2)}\n`;
+                paymentDetailsMsg += `🔄 *Cambio:* $${changeAmount.toFixed(2)}\n`;
+            } else {
+                paymentDetailsMsg += `💳 *PAGO: TRANSFERENCIA*\n`;
+                paymentDetailsMsg += `📎 _(Adjunto comprobante a continuación)_`;
             }
 
-            const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            
             // --- FORMATO DE MENSAJE PROFESIONAL ---
             let message = `🍣 *NUEVO PEDIDO WEB - SO SUSHI* 🍣\n`;
             message += `📅 *Fecha:* ${new Date().toLocaleDateString()}\n`;
@@ -695,53 +920,49 @@
             message += `👤 *DATOS DEL CLIENTE*\n`;
             message += `▪️ *Cliente:* ${name}\n`;
             message += `▪️ *Tel:* ${phone}\n`;
-            message += `📍 *Dirección:* ${address}\n`;
-            if(addressDetails) {
-                message += `📝 *Ref:* ${addressDetails}\n`;
+            
+            if (userLocation) {
+                 message += `📍 *Ubicación GPS:* ${userLocation.mapUrl}\n`;
+                 message += `📏 *Distancia:* ${distanceKm} km\n`;
+                 message += `📝 *Ref:* ${address} ${addressDetails ? '- ' + addressDetails : ''}\n`;
+            } else {
+                 message += `📍 *Dirección Manual:* ${address}\n`;
+                 if(addressDetails) message += `📝 *Ref:* ${addressDetails}\n`;
             }
             
             message += `\n📋 *DETALLE DE LA ORDEN*\n`;
             message += `────────────────────\n`;
             
             cart.forEach(item => {
-                const subtotal = item.price * item.quantity;
+                const itemTotal = item.price * item.quantity;
                 message += `🥢 *${item.quantity}x ${item.name}*\n`;
                 message += `    ↳ 🐟 ${item.protein}\n`;
                 if(item.note) {
                     message += `    ↳ ✏️ _${item.note}_\n`;
                 }
-                message += `    ↳ 💲$${subtotal.toFixed(2)}\n\n`;
+                message += `    ↳ 💲$${itemTotal.toFixed(2)}\n\n`;
             });
 
             message += `────────────────────\n`;
-            message += `💰 *TOTAL A PAGAR: $${totalPrice.toFixed(2)}*\n`;
-            if (totalPrice > 0) { // Solo mostramos "Envío Gratis" si el total es > 0, aunque técnicamente es siempre
-                 message += `🚚 *Envío:* GRATIS\n`;
-            }
-            message += `────────────────────\n\n`;
+            message += `💵 *Subtotal:* $${subtotal.toFixed(2)}\n`;
             
-            message += `💳 *INFORMACIÓN DE PAGO*\n`;
-            
-            if (paymentMethod === 'efectivo') {
-                message += `💵 *Método:* Efectivo\n`;
-                if (needChange) {
-                    const change = parseFloat(paymentAmount) - totalPrice;
-                    message += `🔢 *Paga con:* $${paymentAmount}\n`;
-                    message += `🔄 *Cambio:* $${change > 0 ? change.toFixed(2) : '0.00'}\n`;
-                } else {
-                    message += `✅ *Pago:* Importe Exacto\n`;
-                }
+            // Lógica de Envío en Mensaje
+            if (currentShippingCost === 0) {
+                 let reasonMsg = "GRATIS";
+                 if(freeShippingReason) reasonMsg += ` (${freeShippingReason})`;
+                 message += `🛵 *Envío:* ${reasonMsg}\n`;
             } else {
-                message += `🏦 *Método:* Transferencia Bancaria\n`;
-                message += `📎 _(Adjunto comprobante a continuación)_\n`;
+                 message += `🛵 *Envío (${distanceKm}km x $${SHIPPING_COST_PER_KM}):* $${currentShippingCost.toFixed(2)}\n`;
             }
 
-            message += `\n📍 *Ubicación enviada automáticamente*`;
+            message += `💰 *TOTAL A PAGAR: $${total.toFixed(2)}*\n`;
+            message += `────────────────────\n\n`;
+            
+            message += paymentDetailsMsg;
 
             const NUMERO_WHATSAPP = "3348168590"; 
             
             const url = `https://wa.me/521${NUMERO_WHATSAPP}?text=${encodeURIComponent(message)}`;
-            
             window.open(url, '_blank');
         }
 
@@ -749,7 +970,6 @@
             renderMenu();
             updateCartUI();
         });
-
     </script>
 </body>
 </html>
