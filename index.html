@@ -451,11 +451,16 @@
                             <input type="tel" id="customer-phone" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 focus:bg-gray-600">
                         </div>
 
-                        <!-- Sección de Ubicación Manual (El cálculo es interno) -->
-                        <div class="bg-gray-700/50 p-3 rounded border border-gray-600 hover:border-gray-500 transition">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Dirección de Entrega</label>
-                            <textarea id="customer-address" rows="2" placeholder="Calle, número, colonia..." class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 mt-2 text-sm focus:bg-gray-600"></textarea>
-                            <input type="text" id="customer-address-details" placeholder="Referencias (Color casa, entre calles...)" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 text-sm mt-2 focus:bg-gray-600">
+                        <!-- Sección de Ubicación Inteligente -->
+                        <div class="bg-gray-700/50 p-3 rounded border border-gray-600">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Ubicación de Entrega</label>
+                            
+                            <div id="location-result" class="hidden text-xs mt-2 p-2 bg-gray-800 rounded border border-gray-700">
+                                <!-- Resultado JS -->
+                            </div>
+
+                            <textarea id="customer-address" rows="2" placeholder="O escribe tu dirección manual aquí..." class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 mt-2 text-sm"></textarea>
+                            <input type="text" id="customer-address-details" placeholder="Referencias (Color casa, entre calles...)" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none transition placeholder-gray-500 text-sm mt-2">
                         </div>
                         
                         <!-- Sección de Método de Pago -->
@@ -577,9 +582,9 @@
         const CLOSE_HOUR = 23; // 11 PM
 
         // Configuración de Tarifas
-        const SHIPPING_FREE_THRESHOLD = 250; // Envío gratis si subtotal >= 250
-        const SHIPPING_FREE_KM = 1.0; // Envío gratis si distancia <= 1km
-        const SHIPPING_COST_PER_KM = 11; // Costo por km extra
+        const SHIPPING_FREE_THRESHOLD = 250; 
+        const SHIPPING_FREE_KM = 1.0; 
+        const MAX_DELIVERY_RADIUS = 3.8; // Radio máximo en Km
 
         // Variables Globales
         let currentShippingCost = 0;
@@ -605,11 +610,15 @@
         function isStoreOpen() {
             const now = new Date();
             const hours = now.getHours();
-            // Lunes a Domingo = Siempre es true el día, solo checamos hora
             return hours >= OPEN_HOUR && hours < CLOSE_HOUR;
         }
 
-        // --- NOTIFICACIONES TOAST (FUNCIÓN FALTANTE EN CÓDIGOS ANTERIORES) ---
+        function isWeekend() {
+            const day = new Date().getDay();
+            return day === 0 || day === 6; // 0 = Domingo, 6 = Sábado
+        }
+
+        // --- NOTIFICACIONES TOAST ---
         function showToast(message, isAi = false) {
             const toast = document.getElementById('toast');
             const msgEl = document.getElementById('toast-msg');
@@ -646,7 +655,7 @@
             }
         }
 
-        // --- DATOS DEL MENÚ (TAGS ENRIQUECIDOS PARA SCORING) ---
+        // --- DATOS DEL MENÚ ---
         const proteinasEstandar = ["Camarón", "Pollo", "Surimi"];
         const proteinasLimitadas = ["Pollo", "Camarón"]; 
         const defaultImage = "defaul.jpg";
@@ -694,7 +703,6 @@
         function applyAIFilter(filterType) {
             const btns = document.querySelectorAll('.ai-filter-btn');
             btns.forEach(b => b.classList.remove('active'));
-            // Usamos event.currentTarget para mayor seguridad si el click es en un hijo
             if(event && event.currentTarget) event.currentTarget.classList.add('active'); 
 
             const lists = [
@@ -711,7 +719,6 @@
                 let filteredItems = group.items;
 
                 if (filterType !== 'all') {
-                    // Mapa de filtros simples para la barra superior
                     filteredItems = group.items.filter(item => {
                         if(filterType === 'promo') return item.tags.includes('promo');
                         if(filterType === 'spicy') return item.tags.includes('spicy');
@@ -741,7 +748,7 @@
         }
 
         // --- LÓGICA DE INTELIGENCIA ARTIFICIAL (Sushito 2.0) ---
-        let aiScores = {}; // Puntuación para cada ítem
+        let aiScores = {}; 
 
         function toggleAI() {
             const modal = document.getElementById('ai-modal');
@@ -773,7 +780,6 @@
 
         function startAIChat() {
             aiScores = {}; 
-            // Inicializar scores en 0
             allItems.forEach(item => aiScores[item.id] = 0);
 
             const container = document.getElementById('chat-container');
@@ -788,7 +794,7 @@
                     addOptions([
                         { text: "Tengo mucha hambre (Atascarme) 🐗", action: "ratePreference(['heavy', 'crunchy', 'meat'], 5); askFlavor();" },
                         { text: "Algo tranqui / Fit 🥗", action: "ratePreference(['light', 'fresh', 'avocado'], 5); askFlavor();" },
-                        { text: "Cuidar la cartera 💸", action: "ratePreference(['promo'], 10); findRecommendation();" }, // Shortcut
+                        { text: "Cuidar la cartera 💸", action: "ratePreference(['promo'], 10); findRecommendation();" }, 
                         { text: "Compartir con amigos 👯", action: "ratePreference(['share', 'snack'], 5); askFlavor();" }
                     ]);
                 }, 600);
@@ -838,11 +844,10 @@
 
         function filterByProtein(protein) {
             allItems.forEach(item => {
-                // Si tiene proteinas definidas y NO incluye la deseada, penalizar fuerte
                 if (item.proteins && item.proteins.length > 0 && !item.proteins.includes(protein)) {
                     aiScores[item.id] -= 10; 
                 } else if (item.proteins && item.proteins.includes(protein)) {
-                    aiScores[item.id] += 3; // Bonus
+                    aiScores[item.id] += 3; 
                 }
             });
         }
@@ -852,7 +857,6 @@
             setTimeout(() => {
                 removeTypingIndicator();
                 
-                // Encontrar ganador
                 let winner = null;
                 let maxScore = -999;
 
@@ -863,7 +867,6 @@
                     }
                 });
 
-                // Calcular % de match (simulado para efecto visual)
                 let matchPercent = Math.min(99, 75 + Math.floor(Math.random() * 24)); 
                 if (maxScore > 10) matchPercent = 98;
                 if (maxScore < 2) matchPercent = 65;
@@ -876,7 +879,6 @@
         function showResult(item, percent) {
             const container = document.getElementById('chat-container');
             
-            // Crear tarjeta de resultado
             const cardHtml = `
                 <div class="mt-2 bg-gray-800 rounded-lg p-4 border border-blue-500 shadow-lg animate-fade-in relative overflow-hidden">
                     <div class="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">
@@ -903,7 +905,6 @@
             container.appendChild(resultDiv);
             container.scrollTop = container.scrollHeight;
             
-            // Confeti pequeño al encontrar resultado
             try {
                 var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
                 confetti(Object.assign({}, defaults, { particleCount: 40, origin: { x: 0.5, y: 0.5 } }));
@@ -938,7 +939,6 @@
                 btn.className = 'chat-option-btn';
                 btn.innerText = opt.text;
                 btn.onclick = () => {
-                    // Deshabilitar botones anteriores
                     const allBtns = document.querySelectorAll('.chat-option-btn');
                     allBtns.forEach(b => { b.disabled = true; b.style.opacity = 0.5; });
                     optionsDiv.remove(); 
@@ -953,8 +953,8 @@
         }
 
         function addToCartFromAI(id) {
-            toggleAI(); // Cerrar modal
-            addToCart(id); // Agregar al carrito usando la función principal
+            toggleAI(); 
+            addToCart(id); 
         }
 
         // --- FUNCIONES DE GEOLOCALIZACIÓN Y DISTANCIA ---
@@ -966,7 +966,6 @@
             
             if (!navigator.geolocation) return;
 
-            // UI Feedback inicial (Muestra que está trabajando si es manual, o silencioso)
             if(isManual && btn) {
                 btn.innerHTML = `<i class="fa-solid fa-spinner loading-spin"></i> Localizando...`;
                 btn.disabled = true;
@@ -979,28 +978,43 @@
                 distanceKm = parseFloat(dist.toFixed(2));
                 userLocation = { lat: lat, lng: lng };
 
-                if (distanceKm <= 1.0) {
-                    if(cashRadio) {
-                        cashRadio.classList.remove('hidden');
-                        cashRadio.classList.add('flex');
+                // Validar Radio Máximo 3.8 km
+                if (distanceKm > MAX_DELIVERY_RADIUS) {
+                    if (resultDiv) {
+                        resultDiv.classList.remove('hidden');
+                        resultDiv.innerHTML = `<p class="text-red-400 font-bold"><i class="fa-solid fa-circle-exclamation"></i> Fuera de zona (${distanceKm} km)</p><p class="text-xs text-gray-400">Solo entregamos hasta ${MAX_DELIVERY_RADIUS} km.</p>`;
                     }
+                    if(isManual) alert(`Lo sentimos, estás a ${distanceKm}km. Nuestro límite de entrega es ${MAX_DELIVERY_RADIUS}km.`);
+                    // Resetear para evitar cobros erróneos
+                    userLocation = null; 
+                    distanceKm = 0;
                 } else {
-                    if(cashRadio) {
-                        cashRadio.classList.add('hidden');
-                        cashRadio.classList.remove('flex');
+                    // Dentro del radio
+                    const weekend = isWeekend();
+                    
+                    if (weekend || distanceKm <= 1.0) {
+                        if(cashRadio) {
+                            cashRadio.classList.remove('hidden');
+                            cashRadio.classList.add('flex');
+                        }
+                    } else {
+                        if(cashRadio) {
+                            cashRadio.classList.add('hidden');
+                            cashRadio.classList.remove('flex');
+                        }
+                        const transferRadio = document.querySelector('input[value="transferencia"]');
+                        if (transferRadio) {
+                            transferRadio.checked = true;
+                            togglePaymentMethod();
+                        }
                     }
-                    const transferRadio = document.querySelector('input[value="transferencia"]');
-                    if (transferRadio) {
-                        transferRadio.checked = true;
-                        togglePaymentMethod();
+                    
+                    if (resultDiv) {
+                        resultDiv.classList.remove('hidden');
+                        resultDiv.innerHTML = `<p class="text-green-400 font-bold"><i class="fa-solid fa-check-circle"></i> Ubicación detectada (${distanceKm} km)</p>`;
                     }
                 }
-                
-                // Si hay elementos de UI de ubicación (del código antiguo o futuro), actualizarlos
-                if (resultDiv) {
-                    resultDiv.classList.remove('hidden');
-                    resultDiv.innerHTML = `<p class="text-green-400 font-bold"><i class="fa-solid fa-check-circle"></i> Ubicación detectada (${distanceKm} km)</p>`;
-                }
+
                 if(btn) {
                     btn.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Recalcular`;
                     btn.disabled = false;
@@ -1094,7 +1108,6 @@
 
         // --- Funciones del Carrito ---
 
-        // Función para abrir/cerrar el carrito
         function toggleCart() {
             if(!isStoreOpen()) {
                 alert("Restaurante cerrado. Horario: 4:00 PM a 11:00 PM.");
@@ -1185,14 +1198,50 @@
             } else { aiSuggestionBox.classList.add('hidden'); }
 
             if (userLocation) {
-                if (subtotal >= SHIPPING_FREE_THRESHOLD) { currentShippingCost = 0; freeShippingReason = "Pedido > $250"; } else if (distanceKm <= SHIPPING_FREE_KM) { currentShippingCost = 0; freeShippingReason = "Distancia < 1km"; } else { currentShippingCost = Math.ceil(distanceKm * SHIPPING_COST_PER_KM); freeShippingReason = ""; }
+                // Validación estricta de radio máximo
+                if (distanceKm > MAX_DELIVERY_RADIUS) {
+                    currentShippingCost = 0;
+                    // No calculamos costo porque no entregamos
+                } else {
+                    const weekend = isWeekend();
+                    
+                    if (subtotal >= SHIPPING_FREE_THRESHOLD) { 
+                        currentShippingCost = 0; 
+                        freeShippingReason = "Pedido > $250"; 
+                    } else if (distanceKm <= SHIPPING_FREE_KM) { 
+                        currentShippingCost = 0; 
+                        freeShippingReason = "Distancia < 1km"; 
+                    } else { 
+                        // LÓGICA MODIFICADA PARA FIN DE SEMANA
+                        if (weekend) {
+                            currentShippingCost = 10; // Tarifa plana de $10 los fines de semana si > 1km
+                        } else {
+                            currentShippingCost = Math.ceil(distanceKm * SHIPPING_COST_PER_KM); // Tarifa por km entre semana ($11)
+                        }
+                        freeShippingReason = ""; 
+                    }
+                }
             } else { currentShippingCost = 0; }
 
             const total = subtotal + currentShippingCost;
             subtotalEl.innerText = `$${subtotal.toFixed(2)}`;
             totalEl.innerText = `$${total.toFixed(2)}`;
 
-            if (!userLocation) { shippingEl.innerText = "Calculando..."; shippingEl.className = "text-yellow-500 font-bold text-sm italic"; } else { if (currentShippingCost === 0) { shippingEl.innerHTML = `GRATIS <span class="text-[10px] bg-green-700 px-1 rounded ml-1 font-normal">${freeShippingReason}</span>`; shippingEl.className = "text-green-400 font-bold"; } else { shippingEl.innerText = `$${currentShippingCost.toFixed(2)}`; shippingEl.className = "text-white font-bold"; } }
+            if (!userLocation) { 
+                shippingEl.innerText = "Calculando..."; 
+                shippingEl.className = "text-yellow-500 font-bold text-sm italic"; 
+            } else { 
+                if (distanceKm > MAX_DELIVERY_RADIUS) {
+                    shippingEl.innerText = "FUERA DE ZONA";
+                    shippingEl.className = "text-red-500 font-bold text-sm";
+                } else if (currentShippingCost === 0) { 
+                    shippingEl.innerHTML = `GRATIS <span class="text-[10px] bg-green-700 px-1 rounded ml-1 font-normal">${freeShippingReason}</span>`; 
+                    shippingEl.className = "text-green-400 font-bold"; 
+                } else { 
+                    shippingEl.innerText = `$${currentShippingCost.toFixed(2)}`; 
+                    shippingEl.className = "text-white font-bold"; 
+                } 
+            }
 
             if (cart.length === 0) {
                 container.innerHTML = `<div class="text-center text-gray-500 mt-20 flex flex-col items-center"><i class="fa-solid fa-basket-shopping text-6xl mb-4 opacity-20"></i><p class="text-lg font-medium">Carrito vacío</p><button onclick="toggleCart()" class="mt-4 text-red-500 text-sm hover:text-red-400">Ver Menú</button></div>`;
@@ -1203,10 +1252,19 @@
                 checkoutBtn.classList.remove('bg-green-600', 'hover:bg-green-500');
                 isCheckoutMode = false;
             } else {
-                checkoutBtn.disabled = false;
-                checkoutBtn.classList.remove('bg-gray-700', 'cursor-not-allowed');
-                checkoutBtn.classList.add('bg-green-600', 'hover:bg-green-500');
-                if (!isCheckoutMode) { checkoutBtn.innerHTML = `Continuar Compra <i class="fa-solid fa-arrow-right"></i>`; }
+                // Verificar si está fuera de zona para deshabilitar botón
+                if (userLocation && distanceKm > MAX_DELIVERY_RADIUS) {
+                    checkoutBtn.disabled = true;
+                    checkoutBtn.classList.add('bg-gray-700', 'cursor-not-allowed');
+                    checkoutBtn.classList.remove('bg-green-600', 'hover:bg-green-500');
+                    checkoutBtn.innerHTML = `Fuera de zona de reparto`;
+                } else {
+                    checkoutBtn.disabled = false;
+                    checkoutBtn.classList.remove('bg-gray-700', 'cursor-not-allowed');
+                    checkoutBtn.classList.add('bg-green-600', 'hover:bg-green-500');
+                    if (!isCheckoutMode) { checkoutBtn.innerHTML = `Continuar Compra <i class="fa-solid fa-arrow-right"></i>`; }
+                }
+                
                 container.innerHTML = cart.map(item => `<div class="bg-gray-800 p-3 rounded-lg shadow-sm mb-3 border border-gray-700 relative overflow-hidden group"><div class="flex items-center mb-2"><img src="${item.image}" class="w-14 h-14 rounded-md object-contain bg-gray-800 p-1 border border-gray-600" alt="${item.name}"><div class="flex-1 min-w-0"><h4 class="font-bold text-sm text-gray-200 truncate">${item.name}</h4><p class="text-xs text-gray-400 mb-0.5 truncate">${item.protein}</p><p class="text-red-500 font-bold text-sm">$${(item.price * item.quantity).toFixed(2)}</p></div><div class="flex items-center gap-2 bg-gray-900 rounded-lg p-1 border border-gray-700"><button onclick="updateQuantity('${item.cartId}', -1)" class="text-gray-400 hover:text-red-500 w-6 h-6 flex items-center justify-center transition"><i class="fa-solid fa-minus text-xs"></i></button><span class="text-sm font-bold text-white w-4 text-center select-none">${item.quantity}</span><button onclick="updateQuantity('${item.cartId}', 1)" class="text-gray-400 hover:text-green-500 w-6 h-6 flex items-center justify-center transition"><i class="fa-solid fa-plus text-xs"></i></button></div></div><div class="border-t border-gray-700 pt-2"><input type="text" placeholder="Nota: sin pepino, extra soya..." value="${item.note || ''}" oninput="updateItemNote('${item.cartId}', this.value)" class="w-full bg-gray-900/50 text-xs text-gray-300 border border-gray-600 rounded px-2 py-1 focus:border-red-500 focus:outline-none placeholder-gray-600"></div></div>`).join('');
             }
         }
@@ -1222,6 +1280,8 @@
 
         function handleCheckout() {
             if(!isStoreOpen()) { alert("Restaurante cerrado. No podemos procesar tu pedido."); return; }
+            if (userLocation && distanceKm > MAX_DELIVERY_RADIUS) { alert("Lo sentimos, tu ubicación está fuera de nuestra zona de reparto (Máximo 3.8km)."); return; }
+
             const formSection = document.getElementById('checkout-form');
             const checkoutBtn = document.getElementById('checkout-btn');
             if (!isCheckoutMode) { formSection.classList.remove('hidden'); checkoutBtn.innerHTML = `<i class="fa-brands fa-whatsapp text-xl"></i> Confirmar Pedido`; isCheckoutMode = true; setTimeout(() => { const modalContent = document.querySelector('.cart-items'); modalContent.scrollTop = modalContent.scrollHeight; }, 100); return; }
@@ -1236,7 +1296,20 @@
             } else { paymentDetailsMsg += `💳 *PAGO: TRANSFERENCIA*\n`; paymentDetailsMsg += `📎 _(Adjunto comprobante a continuación)_`; }
             let message = `🍣 *NUEVO PEDIDO WEB - SO SUSHI* 🍣\n`; message += `📅 *Fecha:* ${new Date().toLocaleDateString()}\n`; message += `────────────────────\n\n`; message += `👤 *DATOS DEL CLIENTE*\n`; message += `▪️ *Cliente:* ${name}\n`; message += `▪️ *Tel:* ${phone}\n`; message += `📍 *Dirección:* ${address}\n`; if(addressDetails) message += `📝 *Ref:* ${addressDetails}\n`; message += `\n📋 *DETALLE DE LA ORDEN*\n`; message += `────────────────────\n`;
             cart.forEach(item => { const itemTotal = item.price * item.quantity; message += `🥢 *${item.quantity}x ${item.name}*\n`; message += `    ↳ 🐟 ${item.protein}\n`; if(item.note) { message += `    ↳ ✏️ _${item.note}_\n`; } message += `    ↳ 💲$${itemTotal.toFixed(2)}\n\n`; });
-            message += `────────────────────\n`; message += `💵 *Subtotal:* $${subtotal.toFixed(2)}\n`; if (currentShippingCost === 0) { let reasonMsg = "GRATIS"; if(freeShippingReason) reasonMsg += ` (${freeShippingReason})`; message += `🛵 *Envío:* ${reasonMsg}\n`; } else { message += `🛵 *Envío (${distanceKm}km x $${SHIPPING_COST_PER_KM}):* $${currentShippingCost.toFixed(2)}\n`; } message += `💰 *TOTAL A PAGAR: $${total.toFixed(2)}*\n`; message += `────────────────────\n\n`; message += paymentDetailsMsg;
+            message += `────────────────────\n`; message += `💵 *Subtotal:* $${subtotal.toFixed(2)}\n`; 
+            if (currentShippingCost === 0) { 
+                let reasonMsg = "GRATIS"; 
+                if(freeShippingReason) reasonMsg += ` (${freeShippingReason})`; 
+                message += `🛵 *Envío:* ${reasonMsg}\n`; 
+            } else { 
+                const weekend = isWeekend();
+                if(weekend) {
+                     message += `🛵 *Envío (Promo Fin de Semana):* $${currentShippingCost.toFixed(2)}\n`; 
+                } else {
+                     message += `🛵 *Envío (${distanceKm}km):* $${currentShippingCost.toFixed(2)}\n`; 
+                }
+            } 
+            message += `💰 *TOTAL A PAGAR: $${total.toFixed(2)}*\n`; message += `────────────────────\n\n`; message += paymentDetailsMsg;
             const NUMERO_WHATSAPP = "3348168590"; 
             const url = `https://wa.me/521${NUMERO_WHATSAPP}?text=${encodeURIComponent(message)}`; window.open(url, '_blank'); resetOrder();
         }
